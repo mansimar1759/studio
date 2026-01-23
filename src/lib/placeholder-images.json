@@ -14,9 +14,9 @@
     },
     {
       "id": "stress_reduction",
-      "description": "A calm and focused student working at a sunlit desk.",
-      "imageUrl": "https://images.unsplash.com/photo-1758685733727-c93092b7c134?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmb2N1c2VkJTIwc3R1ZGVudHxlbnwwfHx8fDE3NjkxNzcyMDF8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "focused student"
+      "description": "A calm and focused teen student working at a desk.",
+      "imageUrl": "https://images.unsplash.com/photo-1574717148135-3d57e93733bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0ZWVuJTIwc3R1ZGVudHxlbnwwfHx8fDE3MjE4MzUwMjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "teen student"
     },
     {
       "id": "analytics",
