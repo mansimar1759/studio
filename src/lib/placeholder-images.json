@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero",
+      "description": "A vibrant and modern classroom environment with students collaborating.",
+      "imageUrl": "https://images.unsplash.com/photo-1757194455505-1433ab2cd758?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bW9kZXJuJTIwY2xhc3Nyb29tfGVufDB8fHx8MTc2OTE0MjQ3NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern classroom"
+    },
+    {
+      "id": "prioritization",
+      "description": "A student organizing their tasks on a digital board.",
+      "imageUrl": "https://images.unsplash.com/photo-1611224885990-ab7363d1f2a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx0YXNrJTIwbWFuYWdlbWVudHxlbnwwfHx8fDE3NjkxOTQwNzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "task management"
+    },
+    {
+      "id": "stress_reduction",
+      "description": "A calm and focused student working at a sunlit desk.",
+      "imageUrl": "https://images.unsplash.com/photo-1758685733727-c93092b7c134?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmb2N1c2VkJTIwc3R1ZGVudHxlbnwwfHx8fDE3NjkxNzcyMDF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "focused student"
+    },
+    {
+      "id": "analytics",
+      "description": "A teacher looking at a dashboard with charts and graphs on a tablet.",
+      "imageUrl": "https://images.unsplash.com/photo-1666875753105-c63a6f3bdc86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkYXRhJTIwZGFzaGJvYXJkfGVufDB8fHx8MTc2OTA4Njc4N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "data dashboard"
+    }
+  ]
 }
