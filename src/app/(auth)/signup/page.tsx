@@ -97,20 +97,32 @@ export default function SignupPage() {
                 <Select>
                   <SelectTrigger id="batch"><SelectValue placeholder="Select batch" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="2024a">Batch A 2024</SelectItem>
-                    <SelectItem value="2024b">Batch B 2024</SelectItem>
+                    <SelectItem value="cse-aiml">CSE-AIML</SelectItem>
+                    <SelectItem value="cse-ds">CSE-DS</SelectItem>
+                    <SelectItem value="cse-batch-1">CSE Batch 1</SelectItem>
+                    <SelectItem value="cse-batch-2">CSE Batch 2</SelectItem>
+                    <SelectItem value="cse-batch-3">CSE Batch 3</SelectItem>
+                    <SelectItem value="cse-eve">CSE Eve</SelectItem>
+                    <SelectItem value="it-1">IT 1</SelectItem>
+                    <SelectItem value="it-2">IT 2</SelectItem>
+                    <SelectItem value="it-eve">IT Eve</SelectItem>
+                    <SelectItem value="ece">ECE</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="year">Year</Label>
+                <Label htmlFor="semester">Semester</Label>
                 <Select>
-                  <SelectTrigger id="year"><SelectValue placeholder="Select year" /></SelectTrigger>
+                  <SelectTrigger id="semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1st Year</SelectItem>
-                    <SelectItem value="2">2nd Year</SelectItem>
-                    <SelectItem value="3">3rd Year</SelectItem>
-                    <SelectItem value="4">4th Year</SelectItem>
+                    <SelectItem value="1">Semester 1</SelectItem>
+                    <SelectItem value="2">Semester 2</SelectItem>
+                    <SelectItem value="3">Semester 3</SelectItem>
+                    <SelectItem value="4">Semester 4</SelectItem>
+                    <SelectItem value="5">Semester 5</SelectItem>
+                    <SelectItem value="6">Semester 6</SelectItem>
+                    <SelectItem value="7">Semester 7</SelectItem>
+                    <SelectItem value="8">Semester 8</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -124,10 +136,11 @@ export default function SignupPage() {
                  <Select>
                   <SelectTrigger id="subject"><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="physics">Physics</SelectItem>
-                    <SelectItem value="math">Mathematics</SelectItem>
-                    <SelectItem value="history">History</SelectItem>
-                    <SelectItem value="chemistry">Chemistry</SelectItem>
+                    <SelectItem value="applied-physics">Applied Physics</SelectItem>
+                    <SelectItem value="applied-mathematics">Applied Mathematics</SelectItem>
+                    <SelectItem value="applied-chemistry">Applied Chemistry</SelectItem>
+                    <SelectItem value="electrical-science">Electrical science</SelectItem>
+                    <SelectItem value="manufacturing-process">Manufacturing Process</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -136,8 +149,16 @@ export default function SignupPage() {
                 <Select>
                   <SelectTrigger id="teacher-batch"><SelectValue placeholder="Select batch" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="2024a">Batch A 2024</SelectItem>
-                    <SelectItem value="2024b">Batch B 2024</SelectItem>
+                    <SelectItem value="cse-aiml">CSE-AIML</SelectItem>
+                    <SelectItem value="cse-ds">CSE-DS</SelectItem>
+                    <SelectItem value="cse-batch-1">CSE Batch 1</SelectItem>
+                    <SelectItem value="cse-batch-2">CSE Batch 2</SelectItem>
+                    <SelectItem value="cse-batch-3">CSE Batch 3</SelectItem>
+                    <SelectItem value="cse-eve">CSE Eve</SelectItem>
+                    <SelectItem value="it-1">IT 1</SelectItem>
+                    <SelectItem value="it-2">IT 2</SelectItem>
+                    <SelectItem value="it-eve">IT Eve</SelectItem>
+                    <SelectItem value="ece">ECE</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
