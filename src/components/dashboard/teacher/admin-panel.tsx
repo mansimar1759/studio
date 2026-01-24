@@ -27,28 +27,24 @@ const chartConfig: ChartConfig = {
     label: "Tasks",
   },
   physics: {
-    label: "Physics",
+    label: "Applied Physics",
     color: "hsl(var(--chart-1))",
   },
   math: {
-    label: "Math",
+    label: "Applied Math",
     color: "hsl(var(--chart-2))",
   },
-  history: {
-    label: "History",
+  chemistry: {
+    label: "Applied Chemistry",
     color: "hsl(var(--chart-3))",
   },
-  chemistry: {
-    label: "Chemistry",
+  electrical: {
+    label: "Electrical",
     color: "hsl(var(--chart-4))",
   },
-  english: {
-    label: "English",
+  manufacturing: {
+    label: "Manufacturing",
     color: "hsl(var(--chart-5))",
-  },
-  cs: {
-    label: "CS",
-    color: "hsl(var(--chart-1))",
   },
 };
 
@@ -57,6 +53,7 @@ export function AdminPanel() {
   const { tasks: deadlines, setTasks: setDeadlines } = useTasks();
   const [editingMarksId, setEditingMarksId] = useState<string | null>(null);
   const [editingDeadlineTask, setEditingDeadlineTask] = useState<string | null>(null);
+  const teacherSubject = "Applied Physics";
   
   const handleMarkChange = (id: string, newMarks: number) => {
     setStudentData(studentData.map(s => s.id === id ? { ...s, marks: newMarks } : s));
@@ -189,7 +186,10 @@ export function AdminPanel() {
                       {editingDeadlineTask === deadline.name ? (
                         <Button size="sm" onClick={() => setEditingDeadlineTask(null)}><Save className="h-4 w-4 mr-2" />Save</Button>
                       ) : (
-                        <Button variant="outline" size="sm" onClick={() => setEditingDeadlineTask(deadline.name)}><Edit2 className="h-4 w-4 mr-2" />Edit</Button>
+                        <Button variant="outline" size="sm" onClick={() => setEditingDeadlineTask(deadline.name)} disabled={deadline.subject !== teacherSubject}>
+                          <Edit2 className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
                       )}
                     </TableCell>
                   </TableRow>

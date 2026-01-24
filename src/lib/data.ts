@@ -1,12 +1,12 @@
 import type { Task } from "./types";
 
 export const mockTasks: Task[] = [
-  { name: "Physics Lab Report", deadline: "2024-09-15", subject: "Physics", weightage: 20, difficulty: "Hard" },
-  { name: "Calculus Problem Set 5", deadline: "2024-09-10", subject: "Mathematics", weightage: 15, difficulty: "Medium" },
-  { name: "History Essay on WWII", deadline: "2024-09-20", subject: "History", weightage: 25, difficulty: "Medium" },
-  { name: "Chemistry Titration Exp.", deadline: "2024-09-12", subject: "Chemistry", weightage: 10, difficulty: "Easy" },
-  { name: "English Literature Review", deadline: "2024-09-25", subject: "English", weightage: 15, difficulty: "Easy" },
-  { name: "Computer Science Project", deadline: "2024-09-30", subject: "CS", weightage: 30, difficulty: "Hard" },
+  { name: "Lab Report 1", deadline: "2024-09-15", subject: "Applied Physics", weightage: 20, difficulty: "Hard" },
+  { name: "Vector Calculus Assignment", deadline: "2024-09-10", subject: "Applied Mathematics", weightage: 15, difficulty: "Medium" },
+  { name: "Essay on Thermodynamics", deadline: "2024-09-20", subject: "Applied Chemistry", weightage: 25, difficulty: "Medium" },
+  { name: "Circuit Analysis Problems", deadline: "2024-09-12", subject: "Electrical science", weightage: 10, difficulty: "Easy" },
+  { name: "Workshop Practice", deadline: "2024-09-25", subject: "Manufacturing Process", weightage: 15, difficulty: "Easy" },
+  { name: "Lab Report 2", deadline: "2024-09-30", subject: "Applied Physics", weightage: 30, difficulty: "Hard" },
 ];
 
 export const mockStudentData = [
@@ -18,11 +18,9 @@ export const mockStudentData = [
 ];
 
 export const subjectDistributionData = [
-  { subject: 'Physics', tasks: 5, fill: 'var(--color-physics)' },
-  { subject: 'Math', tasks: 8, fill: 'var(--color-math)' },
-  { subject: 'History', tasks: 3, fill: 'var(--color-history)' },
-  { subject: 'Chemistry', tasks: 4, fill: 'var(--color-chemistry)' },
-  { subject: 'English', tasks: 6, fill: 'var(--color-english)' },
-  { subject: 'CS', tasks: 2, fill: 'var(--color-cs)' },
-  { subject: 'Mathematics', tasks: 0, fill: 'var(--color-math)'}
+  { subject: 'physics', tasks: 5, fill: 'var(--color-physics)' },
+  { subject: 'math', tasks: 8, fill: 'var(--color-math)' },
+  { subject: 'chemistry', tasks: 4, fill: 'var(--color-chemistry)' },
+  { subject: 'electrical', tasks: 6, fill: 'var(--color-electrical)' },
+  { subject: 'manufacturing', tasks: 2, fill: 'var(--color-manufacturing)' },
 ];
