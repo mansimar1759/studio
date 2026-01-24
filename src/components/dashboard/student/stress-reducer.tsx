@@ -4,7 +4,7 @@ import { useState } from "react";
 import { getStressReductionSuggestions } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Zap, BrainCircuit } from "lucide-react";
+import { Loader2, BrainCircuit } from "lucide-react";
 import { type ReduceStressOutput } from "@/ai/flows/reduce-stress";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
