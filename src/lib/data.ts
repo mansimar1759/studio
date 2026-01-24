@@ -17,22 +17,6 @@ export const mockStudentData = [
     { id: 'S005', name: 'Eve', marks: 95 },
 ];
 
-export const mockDeadlinesData = [
-    { task: 'Project Alpha Proposal', subject: 'Computer Science', date: '2024-10-15' },
-    { task: 'Literary Analysis Essay', subject: 'English', date: '2024-10-22' },
-    { task: 'Thermodynamics Problem Set', subject: 'Physics', date: '2024-10-18' },
-    { task: 'Historical Research Paper', subject: 'History', date: '2024-11-05' },
-];
-
-export const batchWorkloadData = [
-  { month: 'Sep', workload: 65 },
-  { month: 'Oct', workload: 80 },
-  { month: 'Nov', workload: 75 },
-  { month: 'Dec', workload: 40 },
-  { month: 'Jan', workload: 55 },
-  { month: 'Feb', workload: 60 },
-];
-
 export const subjectDistributionData = [
   { subject: 'Physics', tasks: 5, fill: 'var(--color-physics)' },
   { subject: 'Math', tasks: 8, fill: 'var(--color-math)' },
@@ -40,4 +24,5 @@ export const subjectDistributionData = [
   { subject: 'Chemistry', tasks: 4, fill: 'var(--color-chemistry)' },
   { subject: 'English', tasks: 6, fill: 'var(--color-english)' },
   { subject: 'CS', tasks: 2, fill: 'var(--color-cs)' },
+  { subject: 'Mathematics', tasks: 0, fill: 'var(--color-math)'}
 ];

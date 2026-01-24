@@ -1,9 +1,11 @@
+"use client";
+
+import { useTasks } from "@/context/TasksContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PrioritizationTool } from "@/components/dashboard/student/prioritization-tool";
 import { StressReducer } from "@/components/dashboard/student/stress-reducer";
 import { BookOpen, CalendarClock, Zap, Book } from "lucide-react";
-import { mockTasks } from "@/lib/data";
 import type { Task } from "@/lib/types";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +15,9 @@ interface SubjectTasks {
 }
 
 export default function StudentDashboardPage() {
+  const { tasks } = useTasks();
 
-  const tasksBySubject = mockTasks.reduce((acc, task) => {
+  const tasksBySubject = tasks.reduce((acc, task) => {
     if (!acc[task.subject]) {
       acc[task.subject] = [];
     }
@@ -38,23 +41,23 @@ export default function StudentDashboardPage() {
                 Assignments Due
               </CardTitle>
               <CardDescription>
-                You have {mockTasks.length} pending tasks. Click on a subject to see more.
+                You have {tasks.length} pending tasks. Click on a subject to see more.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
-                {Object.entries(tasksBySubject).map(([subject, tasks]) => (
+                {Object.entries(tasksBySubject).map(([subject, subjectTasks]) => (
                   <AccordionItem value={subject} key={subject}>
                     <AccordionTrigger>
                       <div className="flex items-center gap-4">
                          <Book className="h-5 w-5" />
                         <span className="font-semibold">{subject}</span>
-                        <Badge>{tasks.length} task(s)</Badge>
+                        <Badge>{subjectTasks.length} task(s)</Badge>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
                       <ul className="space-y-3 pl-4">
-                        {tasks.map(task => (
+                        {subjectTasks.map(task => (
                           <li key={task.name} className="border-l-2 border-primary pl-4">
                             <p className="font-medium">{task.name}</p>
                             <p className="text-sm text-muted-foreground">Deadline: {task.deadline} | Difficulty: {task.difficulty}</p>

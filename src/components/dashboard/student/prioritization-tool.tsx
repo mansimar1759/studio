@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { getTaskPriority } from "@/lib/actions";
-import { mockTasks } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Lightbulb, ListOrdered, Loader2, Sparkles, X } from "lucide-react";
 import { type PrioritizationOutput } from "@/ai/flows/prioritize-tasks";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useTasks } from "@/context/TasksContext";
 
 export function PrioritizationTool() {
+  const { tasks } = useTasks();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PrioritizationOutput | null>(null);
 
@@ -18,7 +19,7 @@ export function PrioritizationTool() {
     setLoading(true);
     setResult(null);
     try {
-      const aiResult = await getTaskPriority({ tasks: mockTasks });
+      const aiResult = await getTaskPriority({ tasks });
       setResult(aiResult);
     } catch (error) {
       console.error("Failed to get prioritization:", error);
@@ -27,7 +28,7 @@ export function PrioritizationTool() {
     }
   };
 
-  const getTaskByName = (name: string) => mockTasks.find(task => task.name === name);
+  const getTaskByName = (name: string) => tasks.find(task => task.name === name);
 
   return (
     <Card className="flex flex-col">
@@ -44,7 +45,7 @@ export function PrioritizationTool() {
         <div className="space-y-2 mb-4">
             <h4 className="text-sm font-medium">Your Current Tasks:</h4>
             <div className="flex flex-wrap gap-2">
-                {mockTasks.map((task) => (
+                {tasks.map((task) => (
                     <Badge variant="secondary" key={task.name}>{task.name}</Badge>
                 ))}
             </div>

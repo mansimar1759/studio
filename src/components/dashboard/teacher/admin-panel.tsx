@@ -1,16 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { batchWorkloadData, mockDeadlinesData, mockStudentData, subjectDistributionData } from "@/lib/data"
+import { mockStudentData, subjectDistributionData as mockSubjectDistributionData } from "@/lib/data"
 import { Edit2, Save } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { useTasks } from "@/context/TasksContext";
 
 const chartConfig: ChartConfig = {
   tasks: {
@@ -43,8 +44,8 @@ const chartConfig: ChartConfig = {
 };
 
 export function AdminPanel() {
+  const { tasks, setTasks } = useTasks();
   const [studentData, setStudentData] = useState(mockStudentData);
-  const [deadlinesData, setDeadlinesData] = useState(mockDeadlinesData);
   const [editingMarksId, setEditingMarksId] = useState<string | null>(null);
   const [editingDeadlineTask, setEditingDeadlineTask] = useState<string | null>(null);
   
@@ -53,8 +54,36 @@ export function AdminPanel() {
   };
   
   const handleDateChange = (taskName: string, newDate: string) => {
-    setDeadlinesData(deadlinesData.map(d => d.task === taskName ? { ...d, date: newDate } : d));
+    setTasks(tasks.map(d => d.name === taskName ? { ...d, deadline: newDate } : d));
   };
+
+  const batchWorkloadData = useMemo(() => {
+    const monthCounts: { [key: string]: number } = {};
+    const monthOrder: { [key: string]: number } = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
+
+    tasks.forEach(task => {
+      const month = new Date(task.deadline).toLocaleString('default', { month: 'short' });
+      monthCounts[month] = (monthCounts[month] || 0) + 1;
+    });
+
+    return Object.entries(monthCounts)
+      .map(([month, workload]) => ({ month, workload }))
+      .sort((a, b) => monthOrder[a.month] - monthOrder[b.month]);
+  }, [tasks]);
+
+  const subjectDistributionData = useMemo(() => {
+    const subjectCounts: { [key: string]: number } = {};
+    tasks.forEach(task => {
+      const subjectKey = task.subject === "Mathematics" ? "Math" : task.subject;
+      subjectCounts[subjectKey] = (subjectCounts[subjectKey] || 0) + 1;
+    });
+
+    return mockSubjectDistributionData.map(distData => ({
+      ...distData,
+      tasks: subjectCounts[distData.subject] || 0
+    })).filter(d => d.tasks > 0);
+  }, [tasks]);
+
 
   return (
     <Tabs defaultValue="analytics" className="w-full">
@@ -80,7 +109,7 @@ export function AdminPanel() {
                   <BarChart data={batchWorkloadData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
-                    <YAxis />
+                    <YAxis allowDecimals={false} />
                     <Tooltip cursor={false} content={<ChartTooltipContent />} />
                     <Bar dataKey="workload" fill="hsl(var(--accent))" radius={8} />
                   </BarChart>
@@ -164,22 +193,22 @@ export function AdminPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {deadlinesData.map((deadline) => (
-                  <TableRow key={deadline.task}>
-                    <TableCell>{deadline.task}</TableCell>
+                {tasks.map((deadline) => (
+                  <TableRow key={deadline.name}>
+                    <TableCell>{deadline.name}</TableCell>
                     <TableCell>{deadline.subject}</TableCell>
                     <TableCell>
-                      {editingDeadlineTask === deadline.task ? (
-                        <Input type="date" value={deadline.date} onChange={(e) => handleDateChange(deadline.task, e.target.value)} className="w-40" />
+                      {editingDeadlineTask === deadline.name ? (
+                        <Input type="date" value={deadline.deadline} onChange={(e) => handleDateChange(deadline.name, e.target.value)} className="w-40" />
                       ) : (
-                        deadline.date
+                        deadline.deadline
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {editingDeadlineTask === deadline.task ? (
+                      {editingDeadlineTask === deadline.name ? (
                         <Button size="sm" onClick={() => setEditingDeadlineTask(null)}><Save className="h-4 w-4 mr-2" />Save</Button>
                       ) : (
-                        <Button variant="outline" size="sm" onClick={() => setEditingDeadlineTask(deadline.task)}><Edit2 className="h-4 w-4 mr-2" />Edit</Button>
+                        <Button variant="outline" size="sm" onClick={() => setEditingDeadlineTask(deadline.name)}><Edit2 className="h-4 w-4 mr-2" />Edit</Button>
                       )}
                     </TableCell>
                   </TableRow>

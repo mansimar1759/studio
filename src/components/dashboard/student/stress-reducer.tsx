@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { getStressReductionSuggestions } from "@/lib/actions";
-import { mockTasks } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Zap, BrainCircuit } from "lucide-react";
 import { type ReduceStressOutput } from "@/ai/flows/reduce-stress";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { useTasks } from "@/context/TasksContext";
 
 export function StressReducer() {
+  const { tasks } = useTasks();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ReduceStressOutput | null>(null);
 
@@ -18,7 +19,7 @@ export function StressReducer() {
     setLoading(true);
     setResult(null);
     try {
-      const deadlines = mockTasks.map(task => ({
+      const deadlines = tasks.map(task => ({
         taskName: task.name,
         deadline: new Date(task.deadline).toISOString(),
         subjectWeightage: task.weightage / 100,
