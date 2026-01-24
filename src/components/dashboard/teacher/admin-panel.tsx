@@ -3,16 +3,12 @@
 import * as React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { batchWorkloadData, mockDeadlinesData, mockStudentData, subjectDistributionData } from "@/lib/data"
-import { CalendarIcon, Edit2, MoreHorizontal, Save } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
+import { Edit2, Save } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
@@ -50,15 +46,14 @@ export function AdminPanel() {
   const [studentData, setStudentData] = useState(mockStudentData);
   const [deadlinesData, setDeadlinesData] = useState(mockDeadlinesData);
   const [editingMarksId, setEditingMarksId] = useState<string | null>(null);
+  const [editingDeadlineTask, setEditingDeadlineTask] = useState<string | null>(null);
   
   const handleMarkChange = (id: string, newMarks: number) => {
     setStudentData(studentData.map(s => s.id === id ? { ...s, marks: newMarks } : s));
   };
   
-  const handleDateChange = (taskName: string, newDate: Date | undefined) => {
-    if (newDate) {
-        setDeadlinesData(deadlinesData.map(d => d.task === taskName ? { ...d, date: format(newDate, 'yyyy-MM-dd') } : d));
-    }
+  const handleDateChange = (taskName: string, newDate: string) => {
+    setDeadlinesData(deadlinesData.map(d => d.task === taskName ? { ...d, date: newDate } : d));
   };
 
   return (
@@ -173,24 +168,19 @@ export function AdminPanel() {
                   <TableRow key={deadline.task}>
                     <TableCell>{deadline.task}</TableCell>
                     <TableCell>{deadline.subject}</TableCell>
-                    <TableCell>{deadline.date}</TableCell>
+                    <TableCell>
+                      {editingDeadlineTask === deadline.task ? (
+                        <Input type="date" value={deadline.date} onChange={(e) => handleDateChange(deadline.task, e.target.value)} className="w-40" />
+                      ) : (
+                        deadline.date
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                           <Button variant="outline">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {format(new Date(deadline.date.replace(/-/g, '/')), 'PPP')}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                          <Calendar
-                            mode="single"
-                            selected={new Date(deadline.date.replace(/-/g, '/'))}
-                            onSelect={(date) => handleDateChange(deadline.task, date)}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      {editingDeadlineTask === deadline.task ? (
+                        <Button size="sm" onClick={() => setEditingDeadlineTask(null)}><Save className="h-4 w-4 mr-2" />Save</Button>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={() => setEditingDeadlineTask(deadline.task)}><Edit2 className="h-4 w-4 mr-2" />Edit</Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
