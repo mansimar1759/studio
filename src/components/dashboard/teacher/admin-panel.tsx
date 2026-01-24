@@ -1,17 +1,25 @@
 "use client";
 
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { mockStudentData, subjectDistributionData as mockSubjectDistributionData } from "@/lib/data"
+import { mockStudentData, mockTasks, subjectDistributionData as mockSubjectDistributionData } from "@/lib/data"
 import { Edit2, Save } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { useTasks } from "@/context/TasksContext";
+
+const batchWorkloadData = [
+    { month: "Jan", workload: 10 },
+    { month: "Feb", workload: 12 },
+    { month: "Mar", workload: 8 },
+    { month: "Apr", workload: 15 },
+    { month: "May", workload: 9 },
+    { month: "Jun", workload: 11 },
+];
 
 const chartConfig: ChartConfig = {
   tasks: {
@@ -44,8 +52,8 @@ const chartConfig: ChartConfig = {
 };
 
 export function AdminPanel() {
-  const { tasks, setTasks } = useTasks();
   const [studentData, setStudentData] = useState(mockStudentData);
+  const [deadlines, setDeadlines] = useState(mockTasks);
   const [editingMarksId, setEditingMarksId] = useState<string | null>(null);
   const [editingDeadlineTask, setEditingDeadlineTask] = useState<string | null>(null);
   
@@ -54,36 +62,8 @@ export function AdminPanel() {
   };
   
   const handleDateChange = (taskName: string, newDate: string) => {
-    setTasks(tasks.map(d => d.name === taskName ? { ...d, deadline: newDate } : d));
+    setDeadlines(deadlines.map(d => d.name === taskName ? { ...d, deadline: newDate } : d));
   };
-
-  const batchWorkloadData = useMemo(() => {
-    const monthCounts: { [key: string]: number } = {};
-    const monthOrder: { [key: string]: number } = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
-
-    tasks.forEach(task => {
-      const month = new Date(task.deadline).toLocaleString('default', { month: 'short' });
-      monthCounts[month] = (monthCounts[month] || 0) + 1;
-    });
-
-    return Object.entries(monthCounts)
-      .map(([month, workload]) => ({ month, workload }))
-      .sort((a, b) => monthOrder[a.month] - monthOrder[b.month]);
-  }, [tasks]);
-
-  const subjectDistributionData = useMemo(() => {
-    const subjectCounts: { [key: string]: number } = {};
-    tasks.forEach(task => {
-      const subjectKey = task.subject === "Mathematics" ? "Math" : task.subject;
-      subjectCounts[subjectKey] = (subjectCounts[subjectKey] || 0) + 1;
-    });
-
-    return mockSubjectDistributionData.map(distData => ({
-      ...distData,
-      tasks: subjectCounts[distData.subject] || 0
-    })).filter(d => d.tasks > 0);
-  }, [tasks]);
-
 
   return (
     <Tabs defaultValue="analytics" className="w-full">
@@ -124,7 +104,7 @@ export function AdminPanel() {
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
                     <PieChart>
                       <Tooltip content={<ChartTooltipContent nameKey="tasks" hideLabel />} />
-                      <Pie data={subjectDistributionData} dataKey="tasks" nameKey="subject" innerRadius={60} />
+                      <Pie data={mockSubjectDistributionData} dataKey="tasks" nameKey="subject" innerRadius={60} />
                     </PieChart>
                 </ChartContainer>
               </CardContent>
@@ -193,7 +173,7 @@ export function AdminPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tasks.map((deadline) => (
+                {deadlines.map((deadline) => (
                   <TableRow key={deadline.name}>
                     <TableCell>{deadline.name}</TableCell>
                     <TableCell>{deadline.subject}</TableCell>
