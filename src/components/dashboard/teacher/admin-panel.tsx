@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -9,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { batchWorkloadData, mockDeadlinesData, mockStudentData, subjectDistributionData } from "@/lib/data"
-import { CalendarIcon, Edit2, Save } from "lucide-react"
+import { Edit2, MoreHorizontal, Save } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
@@ -49,6 +50,8 @@ export function AdminPanel() {
   const [studentData, setStudentData] = useState(mockStudentData);
   const [deadlinesData, setDeadlinesData] = useState(mockDeadlinesData);
   const [editingMarksId, setEditingMarksId] = useState<string | null>(null);
+  
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
 
   const handleMarkChange = (id: string, newMarks: number) => {
@@ -61,6 +64,12 @@ export function AdminPanel() {
         setOpenPopovers(prev => ({ ...prev, [taskName]: false }));
     }
   };
+
+  const deadlinesOnSelectedDate = deadlinesData.filter(
+    (deadline) => selectedDate && format(new Date(deadline.date.replace(/-/g, "/")), "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
+  );
+
+  const deadlineDates = React.useMemo(() => deadlinesData.map(d => new Date(d.date.replace(/-/g, "/"))), [deadlinesData]);
 
   return (
     <Tabs defaultValue="analytics" className="w-full">
@@ -157,46 +166,60 @@ export function AdminPanel() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Assignment Deadlines</CardTitle>
-            <CardDescription>Update submission dates for assignments and projects.</CardDescription>
+            <CardDescription>View and manage submission dates for assignments and projects.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Task</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Current Deadline</TableHead>
-                  <TableHead className="text-right">Set New Deadline</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deadlinesData.map((deadline) => (
-                  <TableRow key={deadline.task}>
-                    <TableCell>{deadline.task}</TableCell>
-                    <TableCell>{deadline.subject}</TableCell>
-                    <TableCell>{format(new Date(deadline.date.replace(/-/g, '/')), "PPP")}</TableCell>
-                    <TableCell className="text-right">
-                      <Popover open={openPopovers[deadline.task]} onOpenChange={(isOpen) => setOpenPopovers(prev => ({ ...prev, [deadline.task]: isOpen }))}>
-                        <PopoverTrigger asChild>
-                          <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !deadline.date && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {deadline.date ? format(new Date(deadline.date.replace(/-/g, '/')), "PPP") : <span>Pick a date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                          <Calendar
-                            mode="single"
-                            selected={new Date(deadline.date.replace(/-/g, '/'))}
-                            onSelect={(date) => handleDateChange(deadline.task, date)}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-2">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="rounded-md border"
+                modifiers={{ deadline: deadlineDates }}
+                modifiersClassNames={{
+                  deadline: 'relative after:content-[""] after:block after:h-1.5 after:w-1.5 after:rounded-full after:bg-primary after:absolute after:bottom-1.5 after:left-1/2 after:-translate-x-1/2'
+                }}
+              />
+            </div>
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">
+                {selectedDate ? `Deadlines for ${format(selectedDate, 'PPP')}` : 'Select a date'}
+              </h3>
+              <div className="space-y-3">
+                {(selectedDate && deadlinesOnSelectedDate.length > 0) ? (
+                  deadlinesOnSelectedDate.map(deadline => (
+                    <Card key={deadline.task} className="p-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold">{deadline.task}</p>
+                          <p className="text-sm text-muted-foreground">{deadline.subject}</p>
+                          <p className="text-sm">Due: {format(new Date(deadline.date.replace(/-/g, '/')), "PPP")}</p>
+                        </div>
+                        <Popover open={openPopovers[deadline.task]} onOpenChange={(isOpen) => setOpenPopovers(prev => ({ ...prev, [deadline.task]: isOpen }))}>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                              mode="single"
+                              selected={new Date(deadline.date.replace(/-/g, '/'))}
+                              onSelect={(date) => handleDateChange(deadline.task, date)}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </Card>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center pt-8">
+                    {selectedDate ? 'No deadlines for this date.' : 'Select a date to see deadlines.'}
+                  </p>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </TabsContent>
