@@ -7,10 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { mockStudentData, mockTasks, subjectDistributionData as mockSubjectDistributionData } from "@/lib/data"
+import { mockStudentData, subjectDistributionData as mockSubjectDistributionData } from "@/lib/data"
 import { Edit2, Save } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { useTasks } from "@/context/TasksContext";
 
 const batchWorkloadData = [
     { month: "Jan", workload: 10 },
@@ -53,7 +54,7 @@ const chartConfig: ChartConfig = {
 
 export function AdminPanel() {
   const [studentData, setStudentData] = useState(mockStudentData);
-  const [deadlines, setDeadlines] = useState(mockTasks);
+  const { tasks: deadlines, setTasks: setDeadlines } = useTasks();
   const [editingMarksId, setEditingMarksId] = useState<string | null>(null);
   const [editingDeadlineTask, setEditingDeadlineTask] = useState<string | null>(null);
   
