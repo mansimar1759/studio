@@ -60,7 +60,9 @@ export function AdminPanel() {
   };
   
   const handleDateChange = (taskName: string, newDate: string) => {
-    setDeadlines(deadlines.map(d => d.name === taskName ? { ...d, deadline: newDate } : d));
+    setDeadlines(currentDeadlines => 
+      currentDeadlines.map(d => d.name === taskName ? { ...d, deadline: newDate } : d)
+    );
   };
 
   return (
