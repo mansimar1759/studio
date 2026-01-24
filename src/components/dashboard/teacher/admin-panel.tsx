@@ -49,6 +49,7 @@ export function AdminPanel() {
   const [studentData, setStudentData] = useState(mockStudentData);
   const [deadlinesData, setDeadlinesData] = useState(mockDeadlinesData);
   const [editingMarksId, setEditingMarksId] = useState<string | null>(null);
+  const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
 
   const handleMarkChange = (id: string, newMarks: number) => {
     setStudentData(studentData.map(s => s.id === id ? { ...s, marks: newMarks } : s));
@@ -57,6 +58,7 @@ export function AdminPanel() {
   const handleDateChange = (taskName: string, newDate: Date | undefined) => {
     if (newDate) {
         setDeadlinesData(deadlinesData.map(d => d.task === taskName ? { ...d, date: format(newDate, 'yyyy-MM-dd') } : d));
+        setOpenPopovers(prev => ({ ...prev, [taskName]: false }));
     }
   };
 
@@ -86,7 +88,7 @@ export function AdminPanel() {
                     <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
                     <YAxis />
                     <Tooltip cursor={false} content={<ChartTooltipContent />} />
-                    <Bar dataKey="workload" fill="hsl(var(--primary))" radius={8} />
+                    <Bar dataKey="workload" fill="hsl(var(--accent))" radius={8} />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -172,19 +174,19 @@ export function AdminPanel() {
                   <TableRow key={deadline.task}>
                     <TableCell>{deadline.task}</TableCell>
                     <TableCell>{deadline.subject}</TableCell>
-                    <TableCell>{format(new Date(deadline.date), "PPP")}</TableCell>
+                    <TableCell>{format(new Date(deadline.date.replace(/-/g, '/')), "PPP")}</TableCell>
                     <TableCell className="text-right">
-                      <Popover>
+                      <Popover open={openPopovers[deadline.task]} onOpenChange={(isOpen) => setOpenPopovers(prev => ({ ...prev, [deadline.task]: isOpen }))}>
                         <PopoverTrigger asChild>
                           <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !deadline.date && "text-muted-foreground")}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {deadline.date ? format(new Date(deadline.date), "PPP") : <span>Pick a date</span>}
+                            {deadline.date ? format(new Date(deadline.date.replace(/-/g, '/')), "PPP") : <span>Pick a date</span>}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">
                           <Calendar
                             mode="single"
-                            selected={new Date(deadline.date)}
+                            selected={new Date(deadline.date.replace(/-/g, '/'))}
                             onSelect={(date) => handleDateChange(deadline.task, date)}
                             initialFocus
                           />
