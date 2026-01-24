@@ -58,7 +58,7 @@ export default function StudentDashboardPage() {
                     <AccordionContent>
                       <ul className="space-y-3 pl-4">
                         {subjectTasks.map(task => (
-                          <li key={task.name} className="border-l-2 border-primary pl-4">
+                          <li key={`${task.name}-${task.deadline}`} className="border-l-2 border-primary pl-4">
                             <p className="font-medium">{task.name}</p>
                             <p className="text-sm text-muted-foreground">Deadline: {task.deadline} | Difficulty: {task.difficulty}</p>
                           </li>

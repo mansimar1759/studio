@@ -1,12 +1,12 @@
 import type { Task } from "./types";
 
 export const mockTasks: Task[] = [
-  { name: "Lab Report 1", deadline: "2024-09-15", subject: "Applied Physics", weightage: 20, difficulty: "Hard" },
-  { name: "Vector Calculus Assignment", deadline: "2024-09-10", subject: "Applied Mathematics", weightage: 15, difficulty: "Medium" },
-  { name: "Essay on Thermodynamics", deadline: "2024-09-20", subject: "Applied Chemistry", weightage: 25, difficulty: "Medium" },
-  { name: "Circuit Analysis Problems", deadline: "2024-09-12", subject: "Electrical science", weightage: 10, difficulty: "Easy" },
-  { name: "Workshop Practice", deadline: "2024-09-25", subject: "Manufacturing Process", weightage: 15, difficulty: "Easy" },
-  { name: "Lab Report 2", deadline: "2024-09-30", subject: "Applied Physics", weightage: 30, difficulty: "Hard" },
+  { name: "Lab Report 1", deadline: "2026-09-15", subject: "Applied Physics", weightage: 20, difficulty: "Hard" },
+  { name: "Vector Calculus Assignment", deadline: "2026-09-10", subject: "Applied Mathematics", weightage: 15, difficulty: "Medium" },
+  { name: "Essay on Thermodynamics", deadline: "2026-09-20", subject: "Applied Chemistry", weightage: 25, difficulty: "Medium" },
+  { name: "Circuit Analysis Problems", deadline: "2026-09-12", subject: "Electrical science", weightage: 10, difficulty: "Easy" },
+  { name: "Workshop Practice", deadline: "2026-09-25", subject: "Manufacturing Process", weightage: 15, difficulty: "Easy" },
+  { name: "Lab Report 2", deadline: "2026-09-30", subject: "Applied Physics", weightage: 30, difficulty: "Hard" },
 ];
 
 export const mockStudentData = [
