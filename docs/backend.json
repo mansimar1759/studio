@@ -1,0 +1,779 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user account in the system, linked to an external authentication provider like Google or Apple.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "externalAuthId": {
+          "type": "string",
+          "description": "Unique identifier provided by the external authentication system (e.g., Google ID, Apple ID). (Relationship: ExternalAuth 1:1 User)"
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address, typically provided by the external authentication system.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The user's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The user's last name."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the application (e.g., 'Student', 'Teacher').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "preferredTheme": {
+          "type": "string",
+          "description": "The user's preferred UI theme ('light' or 'dark')."
+        }
+      },
+      "required": [
+        "id",
+        "externalAuthId",
+        "email",
+        "firstName",
+        "lastName",
+        "role",
+        "preferredTheme"
+      ]
+    },
+    "StudentProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudentProfile",
+      "type": "object",
+      "description": "Stores specific profile information for a student user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the StudentProfile entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User entity this profile belongs to. (Relationship: User 1:1 StudentProfile)"
+        },
+        "studentIdNumber": {
+          "type": "string",
+          "description": "A unique internal student identification number."
+        },
+        "batchId": {
+          "type": "string",
+          "description": "Reference to the Batch the student is currently enrolled in. (Relationship: Batch 1:N StudentProfile)"
+        },
+        "enrollmentYear": {
+          "type": "number",
+          "description": "The academic year in which the student was enrolled."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "studentIdNumber",
+        "batchId",
+        "enrollmentYear"
+      ]
+    },
+    "TeacherProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TeacherProfile",
+      "type": "object",
+      "description": "Stores specific profile information for a teacher user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TeacherProfile entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User entity this profile belongs to. (Relationship: User 1:1 TeacherProfile)"
+        },
+        "teacherIdNumber": {
+          "type": "string",
+          "description": "A unique internal teacher identification number."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "teacherIdNumber"
+      ]
+    },
+    "Batch": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Batch",
+      "type": "object",
+      "description": "Represents a group of students progressing through an academic program together.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Batch entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the batch (e.g., '2023-2024 CS-A')."
+        },
+        "academicYear": {
+          "type": "number",
+          "description": "The academic year associated with this batch."
+        },
+        "teacherIds": {
+          "type": "array",
+          "description": "References to TeacherProfiles who teach courses for this batch. (Relationship: TeacherProfile N:N Batch)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "courseIds": {
+          "type": "array",
+          "description": "References to Courses offered to this batch. (Relationship: Course N:N Batch)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "academicYear"
+      ]
+    },
+    "Course": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Course",
+      "type": "object",
+      "description": "Defines an academic subject or course offered within the institution.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Course entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the course (e.g., 'Database Management Systems')."
+        },
+        "code": {
+          "type": "string",
+          "description": "A unique code for the course (e.g., 'CS301')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the course content."
+        },
+        "weightage": {
+          "type": "number",
+          "description": "The weightage of the course, used for student workload calculation and prioritization."
+        },
+        "difficultyLevel": {
+          "type": "number",
+          "description": "Professor-assessed difficulty level of the course (e.g., 1-5).",
+          "format": "int32"
+        },
+        "teacherIds": {
+          "type": "array",
+          "description": "References to TeacherProfiles who are qualified to teach or are currently teaching this course. (Relationship: TeacherProfile N:N Course)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "code",
+        "description",
+        "weightage",
+        "difficultyLevel"
+      ]
+    },
+    "Assignment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Assignment",
+      "type": "object",
+      "description": "Represents a general assignment given to a batch for a specific course.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Assignment entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the assignment."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the assignment."
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to the Course this assignment belongs to. (Relationship: Course 1:N Assignment)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the TeacherProfile who assigned this assignment. (Relationship: TeacherProfile 1:N Assignment)"
+        },
+        "batchId": {
+          "type": "string",
+          "description": "Reference to the Batch for which this assignment is applicable. (Relationship: Batch 1:N Assignment)"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The deadline for submitting the assignment.",
+          "format": "date-time"
+        },
+        "maxMarks": {
+          "type": "number",
+          "description": "The maximum marks obtainable for this assignment."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "courseId",
+        "teacherId",
+        "batchId",
+        "dueDate"
+      ]
+    },
+    "AssignmentSubmission": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AssignmentSubmission",
+      "type": "object",
+      "description": "Records a specific student's submission and marks for an assignment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AssignmentSubmission entity."
+        },
+        "assignmentId": {
+          "type": "string",
+          "description": "Reference to the Assignment this submission is for. (Relationship: Assignment 1:N AssignmentSubmission)"
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the StudentProfile who made this submission. (Relationship: StudentProfile 1:N AssignmentSubmission)"
+        },
+        "submissionDate": {
+          "type": "string",
+          "description": "The date and time when the assignment was submitted.",
+          "format": "date-time"
+        },
+        "marksObtained": {
+          "type": "number",
+          "description": "The marks obtained by the student for this assignment."
+        },
+        "feedback": {
+          "type": "string",
+          "description": "Teacher's feedback on the assignment submission."
+        }
+      },
+      "required": [
+        "id",
+        "assignmentId",
+        "studentId"
+      ]
+    },
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a general project assigned to a batch for a specific course.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Project entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the project."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the project."
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to the Course this project belongs to. (Relationship: Course 1:N Project)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the TeacherProfile who assigned this project. (Relationship: TeacherProfile 1:N Project)"
+        },
+        "batchId": {
+          "type": "string",
+          "description": "Reference to the Batch for which this project is applicable. (Relationship: Batch 1:N Project)"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The deadline for submitting the project.",
+          "format": "date-time"
+        },
+        "maxMarks": {
+          "type": "number",
+          "description": "The maximum marks obtainable for this project."
+        },
+        "suggestedDeadlineChangeDays": {
+          "type": "number",
+          "description": "The number of days by which the AI tool suggests to move the project deadline (positive for extension, negative for reduction).",
+          "format": "int32"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "courseId",
+        "teacherId",
+        "batchId",
+        "dueDate"
+      ]
+    },
+    "ProjectSubmission": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ProjectSubmission",
+      "type": "object",
+      "description": "Records a specific student's submission, progress updates, and marks for a project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ProjectSubmission entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to the Project this submission is for. (Relationship: Project 1:N ProjectSubmission)"
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the StudentProfile who made this submission. (Relationship: StudentProfile 1:N ProjectSubmission)"
+        },
+        "submissionDate": {
+          "type": "string",
+          "description": "The date and time when the project was submitted.",
+          "format": "date-time"
+        },
+        "marksObtained": {
+          "type": "number",
+          "description": "The marks obtained by the student for this project."
+        },
+        "feedback": {
+          "type": "string",
+          "description": "Teacher's feedback on the project submission."
+        },
+        "updates": {
+          "type": "array",
+          "description": "An array of strings representing progress updates for the project.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "studentId"
+      ]
+    },
+    "Exam": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Exam",
+      "type": "object",
+      "description": "Represents a scheduled examination or practical assessment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Exam entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the exam (e.g., 'Mid-term Exam', 'Final Practical')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the exam."
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to the Course this exam belongs to. (Relationship: Course 1:N Exam)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the TeacherProfile who created or administers this exam. (Relationship: TeacherProfile 1:N Exam)"
+        },
+        "batchId": {
+          "type": "string",
+          "description": "Reference to the Batch for which this exam is scheduled. (Relationship: Batch 1:N Exam)"
+        },
+        "examDate": {
+          "type": "string",
+          "description": "The date and time when the exam is scheduled.",
+          "format": "date-time"
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "The duration of the exam in minutes.",
+          "format": "int32"
+        },
+        "maxMarks": {
+          "type": "number",
+          "description": "The maximum marks obtainable for this exam."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "courseId",
+        "teacherId",
+        "batchId",
+        "examDate",
+        "durationMinutes"
+      ]
+    },
+    "ExamResult": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ExamResult",
+      "type": "object",
+      "description": "Records a specific student's results for an exam.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ExamResult entity."
+        },
+        "examId": {
+          "type": "string",
+          "description": "Reference to the Exam this result is for. (Relationship: Exam 1:N ExamResult)"
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the StudentProfile who took the exam. (Relationship: StudentProfile 1:N ExamResult)"
+        },
+        "marksObtained": {
+          "type": "number",
+          "description": "The marks obtained by the student in the exam."
+        },
+        "grade": {
+          "type": "string",
+          "description": "The letter grade or equivalent achieved by the student in the exam."
+        }
+      },
+      "required": [
+        "id",
+        "examId",
+        "studentId"
+      ]
+    },
+    "InternalAssessment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InternalAssessment",
+      "type": "object",
+      "description": "Represents a generic internal assessment (e.g., quiz, class participation) not covered by projects or exams.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the InternalAssessment entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the internal assessment (e.g., 'Pop Quiz 1', 'Class Participation')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the internal assessment."
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to the Course this assessment belongs to. (Relationship: Course 1:N InternalAssessment)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the TeacherProfile who created or administered this assessment. (Relationship: TeacherProfile 1:N InternalAssessment)"
+        },
+        "batchId": {
+          "type": "string",
+          "description": "Reference to the Batch for which this assessment is applicable. (Relationship: Batch 1:N InternalAssessment)"
+        },
+        "assessmentDate": {
+          "type": "string",
+          "description": "The date and time when the assessment took place or was due.",
+          "format": "date-time"
+        },
+        "maxMarks": {
+          "type": "number",
+          "description": "The maximum marks obtainable for this internal assessment."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "courseId",
+        "teacherId",
+        "batchId",
+        "assessmentDate"
+      ]
+    },
+    "InternalAssessmentMark": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InternalAssessmentMark",
+      "type": "object",
+      "description": "Records a specific student's marks for an internal assessment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the InternalAssessmentMark entity."
+        },
+        "internalAssessmentId": {
+          "type": "string",
+          "description": "Reference to the InternalAssessment this mark is for. (Relationship: InternalAssessment 1:N InternalAssessmentMark)"
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the StudentProfile who received this mark. (Relationship: StudentProfile 1:N InternalAssessmentMark)"
+        },
+        "marksObtained": {
+          "type": "number",
+          "description": "The marks obtained by the student for this internal assessment."
+        },
+        "feedback": {
+          "type": "string",
+          "description": "Teacher's feedback regarding this internal assessment mark."
+        }
+      },
+      "required": [
+        "id",
+        "internalAssessmentId",
+        "studentId"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores core user profile information. The `userId` document ID corresponds to the Firebase Authentication UID. Contains the user's `role` (e.g., 'Student', 'Teacher') for database-backed access control. `request.auth.uid` must match `userId` for access.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique Firebase Authentication UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/studentProfile",
+        "definition": {
+          "entityName": "StudentProfile",
+          "schema": {
+            "$ref": "#/backend/entities/StudentProfile"
+          },
+          "description": "Stores specific profile details for a user with the 'Student' role. This document is a subcollection of the user's primary record. `request.auth.uid` must match `userId` for access. Includes `batchId` for student's enrollment context.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique Firebase Authentication UID of the student."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/teacherProfile",
+        "definition": {
+          "entityName": "TeacherProfile",
+          "schema": {
+            "$ref": "#/backend/entities/TeacherProfile"
+          },
+          "description": "Stores specific profile details for a user with the 'Teacher' role. This document is a subcollection of the user's primary record. `request.auth.uid` must match `userId` for access.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique Firebase Authentication UID of the teacher."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/batches/{batchId}",
+        "definition": {
+          "entityName": "Batch",
+          "schema": {
+            "$ref": "#/backend/entities/Batch"
+          },
+          "description": "Manages academic batches, including their associated teachers and courses. Includes denormalized `studentMemberUids: { [uid]: true }` and `teacherMemberUids: { [uid]: true }` maps for authorization independence, allowing direct rule evaluation without hierarchical lookups.",
+          "params": [
+            {
+              "name": "batchId",
+              "description": "The unique identifier for the academic batch."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/courses/{courseId}",
+        "definition": {
+          "entityName": "Course",
+          "schema": {
+            "$ref": "#/backend/entities/Course"
+          },
+          "description": "Defines an academic course. Includes denormalized `teacherMemberUids: { [uid]: true }` map for authorization independence, listing all teachers assigned to this course, facilitating direct access checks.",
+          "params": [
+            {
+              "name": "courseId",
+              "description": "The unique identifier for the course."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/assignments/{assignmentId}",
+        "definition": {
+          "entityName": "Assignment",
+          "schema": {
+            "$ref": "#/backend/entities/Assignment"
+          },
+          "description": "Details of an assignment. Includes denormalized `teacherId` (creator), `batchId`, `courseId`, and `studentUids: { [uid]: true }` and `teacherUids: { [uid]: true }` maps for authorization independence and QAPs. These maps indicate all students and teachers with access to this specific assignment.",
+          "params": [
+            {
+              "name": "assignmentId",
+              "description": "The unique identifier for the assignment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Details of a project. Includes denormalized `teacherId` (creator), `batchId`, `courseId`, and `studentUids: { [uid]: true }` and `teacherUids: { [uid]: true }` maps for authorization independence and QAPs. These maps indicate all students and teachers with access to this specific project.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier for the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/exams/{examId}",
+        "definition": {
+          "entityName": "Exam",
+          "schema": {
+            "$ref": "#/backend/entities/Exam"
+          },
+          "description": "Details of an exam. Includes denormalized `teacherId` (creator), `batchId`, `courseId`, and `studentUids: { [uid]: true }` and `teacherUids: { [uid]: true }` maps for authorization independence and QAPs. These maps indicate all students and teachers with access to this specific exam.",
+          "params": [
+            {
+              "name": "examId",
+              "description": "The unique identifier for the exam."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/internalAssessments/{internalAssessmentId}",
+        "definition": {
+          "entityName": "InternalAssessment",
+          "schema": {
+            "$ref": "#/backend/entities/InternalAssessment"
+          },
+          "description": "Details of an internal assessment (e.g., quiz). Includes denormalized `teacherId` (creator), `batchId`, `courseId`, and `studentUids: { [uid]: true }` and `teacherUids: { [uid]: true }` maps for authorization independence and QAPs. These maps indicate all students and teachers with access to this specific assessment.",
+          "params": [
+            {
+              "name": "internalAssessmentId",
+              "description": "The unique identifier for the internal assessment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/assignmentSubmissions/{submissionId}",
+        "definition": {
+          "entityName": "AssignmentSubmission",
+          "schema": {
+            "$ref": "#/backend/entities/AssignmentSubmission"
+          },
+          "description": "Records a student's submission for an assignment. Includes denormalized `studentId` (owner), `teacherId` (grader), `batchId`, and `courseId` for authorization independence and QAPs. This allows students to access their own submissions and teachers to access submissions they are responsible for grading without complex lookups.",
+          "params": [
+            {
+              "name": "submissionId",
+              "description": "The unique identifier for the assignment submission."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projectSubmissions/{submissionId}",
+        "definition": {
+          "entityName": "ProjectSubmission",
+          "schema": {
+            "$ref": "#/backend/entities/ProjectSubmission"
+          },
+          "description": "Records a student's submission and progress updates for a project. Includes denormalized `studentId` (owner), `teacherId` (grader), `batchId`, and `courseId` for authorization independence and QAPs.",
+          "params": [
+            {
+              "name": "submissionId",
+              "description": "The unique identifier for the project submission."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/examResults/{resultId}",
+        "definition": {
+          "entityName": "ExamResult",
+          "schema": {
+            "$ref": "#/backend/entities/ExamResult"
+          },
+          "description": "Records a student's results for an exam. Includes denormalized `studentId` (owner), `teacherId` (administering teacher), `batchId`, and `courseId` for authorization independence and QAPs.",
+          "params": [
+            {
+              "name": "resultId",
+              "description": "The unique identifier for the exam result."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/internalAssessmentMarks/{markId}",
+        "definition": {
+          "entityName": "InternalAssessmentMark",
+          "schema": {
+            "$ref": "#/backend/entities/InternalAssessmentMark"
+          },
+          "description": "Records a student's marks for an internal assessment. Includes denormalized `studentId` (owner), `teacherId` (grader), `batchId`, and `courseId` for authorization independence and QAPs.",
+          "params": [
+            {
+              "name": "markId",
+              "description": "The unique identifier for the internal assessment mark."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure for EduEase AI is designed with paramount focus on Authorization Independence, enabling robust and debuggable security rules, and supporting Query as Authorization Primitives (QAPs) for efficient data retrieval. Each collection's security posture is homogeneous, simplifying rule logic.\n\n**Authorization Independence via Denormalization:**\n\n1.  \t**User and Profile Data:** Core user information is stored in `/users/{userId}`. Student and teacher-specific profiles are placed in dedicated subcollections (`/users/{userId}/studentProfile` and `/users/{userId}/teacherProfile`). This ensures that access to a user's profile data is directly tied to their `request.auth.uid`, eliminating hierarchical dependencies.\n\n2.  \t**Batch and Course Context:** Instead of relying on `get()` operations to check user memberships, `Batch` documents (`/batches/{batchId}`) include denormalized `studentMemberUids` and `teacherMemberUids` maps. These maps explicitly list all user IDs (UIDs) of students and teachers associated with that batch. Similarly, `Course` documents (`/courses/{courseId}`) include a `teacherMemberUids` map for teachers assigned to teach the course. This allows security rules to evaluate membership directly from the `resource.data` of the document.\n\n3.  \t**Academic Tasks (Assignment, Project, Exam, InternalAssessment):** Documents for these tasks (`/assignments/{assignmentId}`, `/projects/{projectId}`, etc.) are globally accessible but contain critical denormalized fields: `teacherId` (the creator/owner), `batchId`, `courseId`, and crucially, `studentUids` and `teacherUids` maps. These maps explicitly list all `userId`s of students and teachers who should have access (read or write) to that specific task based on their affiliation with the `batchId` and `courseId`. A Cloud Function will be responsible for maintaining the accuracy of these denormalized maps.\n\n4.  \t**Submissions and Results:** Documents like `AssignmentSubmission` (`/assignmentSubmissions/{submissionId}`) are also flat collections. Each submission/result document is denormalized with its `studentId` (owner), `teacherId` (assigned grader/reviewer), `batchId`, and `courseId`. This ensures that a student can read/write their own submissions, and a teacher can read/write feedback/marks for submissions assigned to them, all without `get()` calls in security rules.\n\n**QAPs (Query as Authorization Primitives):**\n\nThe denormalization strategy directly enables QAPs:\n\n*   \t**For Students:** Students can securely list their relevant assignments, projects, exams, or internal assessments by querying the respective collections and filtering `studentUids` array-contains `request.auth.uid`. For submissions/results, they query on `studentId == request.auth.uid`.\n*   \t**For Teachers:** Teachers can securely list academic tasks they manage by filtering `teacherUids` array-contains `request.auth.uid` or `teacherId == request.auth.uid`. For submissions/results, they filter on `teacherId == request.auth.uid` to see items they need to grade or review.\n*   \tSince all necessary authorization information is embedded, Firestore's security rules can efficiently validate `list` operations, ensuring that only authorized data is returned.\n\n**Structural Segregation & DBAC:**\n\nEach major entity type is housed in its own top-level collection (e.g., `/batches`, `/courses`, `/assignments`), or a user-specific subcollection for profiles. This ensures that documents within a given collection share a consistent security model. Roles (e.g., 'Student', 'Teacher') are stored directly in the `User` document's `role` field, enabling simple database-backed access control relying solely on `request.auth.uid`."
+  }
+}
