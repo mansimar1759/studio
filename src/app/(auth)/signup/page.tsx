@@ -52,13 +52,14 @@ export default function SignupPage() {
     if (!isUserLoading && user) {
       // User is logged in, check if they have a profile
       getUserProfile(user.uid).then(profile => {
-        if (!profile) {
-          // No profile, so they need to complete it
+        // A complete profile must have a role.
+        if (profile && profile.role) {
+          // They have a complete profile, send them to the dashboard
+          router.push('/dashboard');
+        } else {
+          // No profile, or incomplete profile (no role). They need to complete it.
           setIsCompletingProfile(true);
           setEmail(user.email || "");
-        } else {
-          // They have a profile, send them to the dashboard
-          router.push('/dashboard');
         }
       });
     }
@@ -306,5 +307,3 @@ export default function SignupPage() {
     </Card>
   );
 }
-
-    
