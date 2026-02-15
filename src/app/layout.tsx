@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from "@/firebase";
 
 export const metadata: Metadata = {
-  title: "EduEase AI",
+  title: "EduEase",
   description: "AI-Powered Education Assistant",
 };
 
@@ -39,5 +39,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    

@@ -12,7 +12,7 @@ export default function AuthLayout({
        <div className="absolute top-4 left-4 md:left-8">
         <Link href="/" className="flex items-center space-x-2 text-primary transition-opacity hover:opacity-80">
           <BookOpenCheck className="h-6 w-6" />
-          <span className="font-bold font-headline text-lg">EduEase AI</span>
+          <span className="font-bold font-headline text-lg">EduEase</span>
         </Link>
       </div>
       <div className="absolute top-4 right-4 md:right-8">

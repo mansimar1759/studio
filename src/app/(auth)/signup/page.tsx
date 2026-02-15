@@ -158,7 +158,7 @@ export default function SignupPage() {
           {isCompletingProfile ? "Complete Your Profile" : "Create an Account"}
         </CardTitle>
         <CardDescription>
-          {isCompletingProfile ? "Please provide a few more details to get started." : "Join EduEase AI and start your journey to smarter learning."}
+          {isCompletingProfile ? "Please provide a few more details to get started." : "Join EduEase and start your journey to smarter learning."}
         </CardDescription>
       </CardHeader>
       <CardContent>

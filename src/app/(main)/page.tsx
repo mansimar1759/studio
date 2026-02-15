@@ -45,7 +45,7 @@ export default function LandingPage() {
               <span className="text-primary">Intelligently Managed.</span>
             </h1>
             <p className="mt-4 max-w-lg text-lg text-muted-foreground md:text-xl">
-              EduEase AI helps students and teachers navigate the complexities of modern education with powerful AI tools for prioritization, stress management, and analytics.
+              EduEase helps students and teachers navigate the complexities of modern education with powerful AI tools for prioritization, stress management, and analytics.
             </p>
             <div className="mt-8 flex gap-4">
               <Button asChild size="lg">
