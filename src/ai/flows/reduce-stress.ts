@@ -44,16 +44,20 @@ export async function reduceStress(input: ReduceStressInput): Promise<ReduceStre
   return reduceStressFlow(input);
 }
 
+const ReduceStressPromptInputSchema = ReduceStressInputSchema.extend({
+    currentDate: z.string().describe("The current date in YYYY-MM-DD format.")
+});
+
 const prompt = ai.definePrompt({
   name: 'reduceStressPrompt',
-  input: {schema: ReduceStressInputSchema},
+  input: {schema: ReduceStressPromptInputSchema},
   output: {schema: ReduceStressOutputSchema},
   prompt: `You are an AI assistant designed to help students reduce stress by analyzing their project deadlines and suggesting deadline adjustments.
 
   Calculate a stress score based on the proximity of deadlines, subject weightage, difficulty level, and overall batch load.
   Provide suggestions for adjusting deadlines to reduce stress, considering the overall batch load.
 
-  Current Date: {{moment format="YYYY-MM-DD"}}
+  Current Date: {{currentDate}}
 
   Here are the tasks with deadlines, subject weightage, and difficulty levels:
   {{#each deadlines}}
@@ -78,7 +82,8 @@ const reduceStressFlow = ai.defineFlow(
     outputSchema: ReduceStressOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const currentDate = new Date().toISOString().split('T')[0];
+    const {output} = await prompt({...input, currentDate});
     return output!;
   }
 );
