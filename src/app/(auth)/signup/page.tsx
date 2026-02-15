@@ -162,6 +162,27 @@ export default function SignupPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {!isCompletingProfile && (
+           <>
+            <div className="grid gap-4">
+              <Button variant="outline" className="w-full" onClick={onGoogleSignIn}>
+                <GoogleIcon className="mr-2 h-4 w-4" />
+                Continue with Google
+              </Button>
+            </div>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or sign up with email
+                </span>
+              </div>
+            </div>
+           </>
+        )}
+
         <form onSubmit={handleSignup} className="grid gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
@@ -294,26 +315,6 @@ export default function SignupPage() {
             {loading ? "Saving..." : (isCompletingProfile ? "Save Profile" : "Sign Up")}
           </Button>
         </form>
-
-        {!isCompletingProfile && (
-           <>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or sign up with
-                </span>
-              </div>
-            </div>
-
-            <Button variant="outline" className="w-full" onClick={onGoogleSignIn}>
-              <GoogleIcon className="mr-2 h-4 w-4" />
-              Continue with Google
-            </Button>
-           </>
-        )}
 
         <div className="mt-6 text-center text-sm">
           Already have an account?{" "}

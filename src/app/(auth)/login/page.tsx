@@ -111,22 +111,15 @@ export default function LoginPage() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or sign in with
+              Or continue with
             </span>
           </div>
         </div>
 
         <Button variant="outline" className="w-full" onClick={onGoogleSignIn}>
           <GoogleIcon className="mr-2 h-4 w-4" />
-          Sign in with Google
+          Continue with Google
         </Button>
-
-        <div className="mt-6 text-center text-sm">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="underline font-medium text-accent hover:text-primary">
-            Sign up
-          </Link>
-        </div>
       </CardContent>
     </Card>
   );
