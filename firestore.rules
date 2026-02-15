@@ -3,312 +3,260 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * Core Philosophy: This ruleset enforces a security model based on Authorization Independence, where
-     * a document's authorization data is denormalized directly onto it. This avoids costly and slow
-     * cross-document `get()` calls in rules. User-specific data is strictly owned, while shared academic
-     * data (like assignments and projects) uses denormalized maps of user IDs (`studentUids`, `teacherUids`)
-     * to grant access to specific groups of users.
+     * Core Philosophy: This ruleset enforces a strict role-based and ownership-based security model
+     * designed for an educational application. The core principle is "default deny," where access
+     * is only granted through explicit rules.
      *
-     * Data Structure: User data, including specific student or teacher profiles, is nested under
-     * `/users/{userId}`. All other academic entities (batches, courses, assignments, submissions) are
-     * organized into their own top-level collections for a flat, scalable structure.
+     * Data Structure:
+     * - User-centric data (profiles, assessments) is nested under /users/{userId} to leverage
+     *   path-based ownership security.
+     * - Academic content (assignments, projects, exams) is nested under /batches/{batchId},
+     *   creating a clear scope for access control.
+     * - Shared, top-level collections (/batches, /subjects) are used for common institutional data.
+     * - A dedicated /roles_admin collection handles global administrator privileges.
      *
      * Key Security Decisions:
-     * - User Enumeration is disabled by denying `list` access on the `/users` collection.
-     * - A user can only access data within their own `/users/{userId}` document tree.
-     * - Access to shared resources like `/assignments` or `/batches` is determined by membership lists
-     *   (e.g., `studentUids`) denormalized on each document, enabling secure client-side queries
-     *   (Query as Authorization Primitives - QAPs).
-     * - Creation of academic tasks (assignments, exams) is restricted to teachers, who become the implicit owners.
-     * - Creation of submissions is restricted to students, who become the owners of their work.
-     * - Client-side modification of core academic structures like Batches and Courses is disabled; these are
-     *   assumed to be managed by a trusted backend or admin process.
+     * - Strict User Ownership: Users can only access and manage their own documents within the
+     *   /users/{userId} data tree. Listing other users' data is forbidden.
+     * - Role-Based Access: A user's capabilities are determined by their role (student or teacher)
+     *   and the scope defined in their profile (e.g., a teacher's assigned batchIds).
+     * - Authorization Independence: Documents contain the necessary fields (e.g., creator IDs,
+     *   batch IDs) to make authorization decisions without costly lookups on other documents,
+     *   with the explicit exception of checking the authenticated user's own profile to establish
+     *   their permissions.
+     * - Global Admins: A user with a document in /roles_admin/{userId} is granted global
+     *   administrative privileges for managing core data like batches and subjects.
      */
 
-    // -------------------------------------------------------------------------
+    // ----------------------------------------------------------------
     // Helper Functions
-    // -------------------------------------------------------------------------
+    // ----------------------------------------------------------------
 
     /**
-     * Checks if the user is authenticated.
+     * Checks if a user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * Checks if the currently authenticated user's UID matches the given userId.
-     * This is the primary function for enforcing document ownership.
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the foundation of the user-ownership model.
      */
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
 
     /**
-     * Checks for ownership on an existing document. Used for safe updates and deletes.
+     * Checks for ownership and that the document already exists.
+     * CRITICAL for preventing modifications to non-existent documents.
      */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
     /**
-     * Checks if a user is a member of a batch (either a student or a teacher).
-     * Relies on denormalized maps on the batch document.
+     * Checks if the authenticated user has a global administrator role.
+     * This is determined by the existence of their UID in the /roles_admin collection.
      */
-    function isBatchMember(batchData) {
-      return isSignedIn() && (request.auth.uid in batchData.studentMemberUids || request.auth.uid in batchData.teacherMemberUids);
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     /**
-     * Checks if a user is a participant (student or teacher) of an academic task.
-     * Relies on denormalized maps on the task document.
+     * Retrieves the authenticated user's student profile document.
+     * Assumes a 1:1 model where the doc ID in the subcollection is the user's UID.
      */
-    function isAcademicTaskParticipant(taskData) {
-      return isSignedIn() && (request.auth.uid in taskData.studentUids || request.auth.uid in taskData.teacherUids);
+    function userStudentProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)/studentProfile/$(request.auth.uid));
     }
 
     /**
-     * Checks if a user is the designated creator/teacher of an academic task.
+     * Retrieves the authenticated user's teacher profile document.
+     * Assumes a 1:1 model where the doc ID in the subcollection is the user's UID.
      */
-    function isTaskCreator(taskData) {
-      return isSignedIn() && request.auth.uid == taskData.teacherId;
+    function userTeacherProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)/teacherProfile/$(request.auth.uid));
     }
 
     /**
-     * Checks if a user is the student who owns a submission or result.
+     * Checks if the authenticated user is a student belonging to a specific batch.
+     * Performs a targeted 'get' on the user's own profile to determine their scope.
      */
-    function isSubmissionOwner(submissionData) {
-      return isSignedIn() && request.auth.uid == submissionData.studentId;
+    function isStudentInBatch(batchId) {
+      let profile = userStudentProfile();
+      return profile != null && profile.data.batchId == batchId;
     }
 
     /**
-     * Checks if a user is the teacher assigned to grade/review a submission.
+     * Checks if the authenticated user is a teacher assigned to a specific batch.
+     * Performs a targeted 'get' on the user's own profile to determine their scope.
      */
-    function isSubmissionGrader(submissionData) {
-      return isSignedIn() && request.auth.uid == submissionData.teacherId;
+    function isTeacherForBatch(batchId) {
+      let profile = userTeacherProfile();
+      return profile != null && batchId in profile.data.batchIds;
     }
 
     /**
-     * Enforces immutability of core relational fields on submission-type documents during an update.
+     * Checks if the authenticated user is a teacher assigned to a specific subject.
+     * Performs a targeted 'get' on the user's own profile to determine their scope.
      */
-    function areSubmissionKeysImmutable(parentKey) {
-      return request.resource.data.studentId == resource.data.studentId
-          && request.resource.data[parentKey] == resource.data[parentKey];
+    function isTeacherForSubject(subjectId) {
+      let profile = userTeacherProfile();
+      return profile != null && subjectId in profile.data.subjectIds;
     }
 
-    // -------------------------------------------------------------------------
-    // User Collections
-    // -------------------------------------------------------------------------
 
     /**
-     * @description Controls access to a user's primary account document.
+     * @description Rules for the admin roles collection. Only existing admins can read or manage this list.
+     * @path /roles_admin/{adminId}
+     * @allow An existing admin (auth.uid exists in /roles_admin) (create) their own or another user's admin role document.
+     * @deny A non-admin user (get) attempting to read the list of admins.
+     * @principle Restricts management of highly privileged roles to other holders of that role, preventing privilege escalation.
+     */
+    match /roles_admin/{adminId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for a user's primary document. Users can create their own document and can read/update it, but not delete it.
      * @path /users/{userId}
-     * @allow (create) A new user can create their own user document after signing up. `auth.uid` must match `userId`.
-     * @deny (get) An authenticated user `user_abc` cannot read the user document for `user_xyz`.
-     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     * @allow A new user (auth.uid: 'user_abc') (create) their own document at /users/user_abc.
+     * @deny A logged-in user (auth.uid: 'user_xyz') (get) attempting to read /users/user_abc.
+     * @principle Enforces Self-Creation and strict document ownership for a user's root document.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if false;
     }
 
     /**
-     * @description Controls access to a student's profile document.
-     * @path /users/{userId}/studentProfile
-     * @allow (create) A student `user_abc` can create their own student profile.
-     * @deny (get) A teacher `user_xyz` cannot directly read a student's profile document.
-     * @principle Enforces that a user's private profile data is only accessible to them.
+     * @description Rules for a user's student profile. Only the owning user can manage their profile.
+     * @path /users/{userId}/studentProfile/{profileId}
+     * @allow The user 'user_abc' (create) their student profile at /users/user_abc/studentProfile/user_abc.
+     * @deny The user 'user_xyz' (update) the profile at /users/user_abc/studentProfile/user_abc.
+     * @principle Restricts access to a user's own data tree and enforces a 1-to-1 relationship by matching the document ID to the user ID.
      */
-    match /users/{userId}/studentProfile {
+    match /users/{userId}/studentProfile/{profileId} {
       allow get: if isOwner(userId);
-      allow list: if false; // This is a single document path, list is not applicable.
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && profileId == userId && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && profileId == userId && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId) && profileId == userId;
     }
 
     /**
-     * @description Controls access to a teacher's profile document.
-     * @path /users/{userId}/teacherProfile
-     * @allow (create) A teacher `user_abc` can create their own teacher profile.
-     * @deny (get) A student `user_xyz` cannot directly read a teacher's profile document.
-     * @principle Enforces that a user's private profile data is only accessible to them.
+     * @description Rules for a user's teacher profile. Only the owning user can manage their profile.
+     * @path /users/{userId}/teacherProfile/{profileId}
+     * @allow The user 'user_abc' (create) their teacher profile at /users/user_abc/teacherProfile/user_abc.
+     * @deny The user 'user_xyz' (get) the profile at /users/user_abc/teacherProfile/user_abc.
+     * @principle Restricts access to a user's own data tree and enforces a 1-to-1 relationship by matching the document ID to the user ID.
      */
-    match /users/{userId}/teacherProfile {
+    match /users/{userId}/teacherProfile/{profileId} {
       allow get: if isOwner(userId);
-      allow list: if false; // This is a single document path, list is not applicable.
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && profileId == userId && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && profileId == userId && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId) && profileId == userId;
     }
 
-    // -------------------------------------------------------------------------
-    // Academic Structure Collections
-    // -------------------------------------------------------------------------
+    /**
+     * @description Rules for a student's internal assessment records. The student can read their own assessments. The assessing teacher can create and manage them.
+     * @path /users/{studentId}/internalAssessments/{assessmentId}
+     * @allow The student 'student_abc' (get) their own assessment at /users/student_abc/internalAssessments/asm_123.
+     * @deny A different student 'student_xyz' (get) the assessment at /users/student_abc/internalAssessments/asm_123.
+     * @principle Enforces a shared access model where data is owned by one user but writable by another authorized user (teacher).
+     */
+    match /users/{studentId}/internalAssessments/{assessmentId} {
+      allow get: if isOwner(studentId) || isOwner(resource.data.assessedByTeacherId);
+      allow list: if isOwner(studentId);
+      allow create: if isTeacherForSubject(request.resource.data.subjectId) && request.resource.data.assessedByTeacherId == request.auth.uid && request.resource.data.studentId == studentId;
+      allow update: if (isOwner(resource.data.assessedByTeacherId) || isAdmin()) && resource != null;
+      allow delete: if (isOwner(resource.data.assessedByTeacherId) || isAdmin()) && resource != null;
+    }
 
     /**
-     * @description Controls access to academic batch documents.
+     * @description Rules for academic batches. Any signed-in user can view batches, but only admins can manage them.
      * @path /batches/{batchId}
-     * @allow (get) A student or teacher whose UID is in the batch's member maps can read the document.
-     * @deny (create) No client is allowed to create, update, or delete batches. This is an admin operation.
-     * @principle Denormalized membership maps on the document control read access. Writes are disabled for clients.
+     * @allow Any authenticated user (get) to read a batch document.
+     * @deny A teacher who is not an admin (create) attempting to create a new batch.
+     * @principle Provides public read access for core institutional data while restricting modifications to privileged admin roles.
      */
     match /batches/{batchId} {
-      allow get: if isSignedIn() && isBatchMember(resource.data);
-      allow list: if isSignedIn(); // Requires client to use a secure query (QAP).
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    /**
-     * @description Controls access to course information.
-     * @path /courses/{courseId}
-     * @allow (get) Any authenticated user (student or teacher) can read course information.
-     * @deny (create) No client is allowed to create, update, or delete courses. This is an admin operation.
-     * @principle Course catalog information is considered public to all authenticated users. Writes are disabled for clients.
-     */
-    match /courses/{courseId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    // -------------------------------------------------------------------------
-    // Academic Task Collections
-    // -------------------------------------------------------------------------
-
-    /**
-     * @description Controls access to assignment documents.
-     * @path /assignments/{assignmentId}
-     * @allow (create) A teacher can create a new assignment, setting themself as the `teacherId`.
-     * @deny (update) A student cannot update an assignment document. Only the creating teacher can.
-     * @principle Teachers own and manage the tasks they create. Students and teachers in the relevant batch/course can read them.
-     */
-    match /assignments/{assignmentId} {
-      allow get: if isAcademicTaskParticipant(resource.data);
-      allow list: if isSignedIn(); // Requires client to use a secure query (QAP).
-      allow create: if isSignedIn() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if resource != null && isTaskCreator(resource.data);
-      allow delete: if resource != null && isTaskCreator(resource.data);
+      // CRITICAL: Cannot implement teacher-manager writes. The 'Batch' entity is missing a 'managerTeacherIds' field.
+      allow create: if isAdmin(); // TODO: Add teacher validation once the schema is updated with a 'managerTeacherIds' field.
+      allow update: if isAdmin() && resource != null; // TODO: Add teacher validation once the schema is updated.
+      allow delete: if isAdmin() && resource != null; // TODO: Add teacher validation once the schema is updated.
     }
 
     /**
-     * @description Controls access to project documents.
-     * @path /projects/{projectId}
-     * @allow (create) A teacher can create a new project, setting themself as the `teacherId`.
-     * @deny (delete) A student cannot delete a project document. Only the creating teacher can.
-     * @principle Teachers own and manage the tasks they create. Students and teachers in the relevant batch/course can read them.
+     * @description Rules for academic subjects. Any signed-in user can view subjects, but only admins can manage them.
+     * @path /subjects/{subjectId}
+     * @allow Any authenticated user (get) to read a subject document.
+     * @deny A teacher who is not an admin (update) attempting to modify a subject.
+     * @principle Provides public read access for core institutional data while restricting modifications to privileged admin roles.
      */
-    match /projects/{projectId} {
-      allow get: if isAcademicTaskParticipant(resource.data);
-      allow list: if isSignedIn(); // Requires client to use a secure query (QAP).
-      allow create: if isSignedIn() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if resource != null && isTaskCreator(resource.data);
-      allow delete: if resource != null && isTaskCreator(resource.data);
+    match /subjects/{subjectId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      // CRITICAL: Cannot implement teacher writes. The 'Subject' entity is missing a 'teachingTeacherIds' field.
+      allow create: if isAdmin(); // TODO: Add teacher validation once the schema is updated with a 'teachingTeacherIds' field.
+      allow update: if isAdmin() && resource != null; // TODO: Add teacher validation once the schema is updated.
+      allow delete: if isAdmin() && resource != null; // TODO: Add teacher validation once the schema is updated.
     }
 
     /**
-     * @description Controls access to exam documents.
-     * @path /exams/{examId}
-     * @allow (create) A teacher can create a new exam, setting themself as the `teacherId`.
-     * @deny (update) A student cannot modify an exam document.
-     * @principle Teachers own and manage the tasks they create. Students and teachers in the relevant batch/course can read them.
+     * @description Rules for assignments within a batch. Students in the batch can read. Teachers for the batch can create and manage.
+     * @path /batches/{batchId}/assignments/{assignmentId}
+     * @allow A student in 'batch_a' (get) an assignment at /batches/batch_a/assignments/asm_123.
+     * @deny A student in 'batch_b' (get) the assignment at /batches/batch_a/assignments/asm_123.
+     * @principle Enforces hierarchical access control where permissions are derived from the parent collection's scope (the batch).
      */
-    match /exams/{examId} {
-      allow get: if isAcademicTaskParticipant(resource.data);
-      allow list: if isSignedIn(); // Requires client to use a secure query (QAP).
-      allow create: if isSignedIn() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if resource != null && isTaskCreator(resource.data);
-      allow delete: if resource != null && isTaskCreator(resource.data);
+    match /batches/{batchId}/assignments/{assignmentId} {
+      allow get: if isStudentInBatch(batchId) || isTeacherForBatch(batchId) || isAdmin();
+      allow list: if isStudentInBatch(batchId) || isTeacherForBatch(batchId) || isAdmin();
+      allow create: if (isTeacherForBatch(batchId) || isAdmin()) && request.resource.data.batchId == batchId && request.resource.data.assignedByTeacherId == request.auth.uid;
+      allow update: if (isOwner(resource.data.assignedByTeacherId) || isAdmin()) && resource != null && request.resource.data.batchId == resource.data.batchId;
+      allow delete: if (isOwner(resource.data.assignedByTeacherId) || isAdmin()) && resource != null;
     }
 
     /**
-     * @description Controls access to internal assessment documents.
-     * @path /internalAssessments/{internalAssessmentId}
-     * @allow (create) A teacher can create a new assessment, setting themself as the `teacherId`.
-     * @deny (update) A student cannot modify an assessment document.
-     * @principle Teachers own and manage the tasks they create. Students and teachers in the relevant batch/course can read them.
+     * @description Rules for projects within a batch. Students in the batch can read. Teachers for the batch can create and manage.
+     * @path /batches/{batchId}/projects/{projectId}
+     * @allow A teacher for 'batch_a' (create) a project at /batches/batch_a/projects/proj_456.
+     * @deny A teacher for 'batch_b' (create) a project at /batches/batch_a/projects/proj_456.
+     * @principle Enforces hierarchical access control where permissions are derived from the parent collection's scope (the batch).
      */
-    match /internalAssessments/{internalAssessmentId} {
-      allow get: if isAcademicTaskParticipant(resource.data);
-      allow list: if isSignedIn(); // Requires client to use a secure query (QAP).
-      allow create: if isSignedIn() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if resource != null && isTaskCreator(resource.data);
-      allow delete: if resource != null && isTaskCreator(resource.data);
-    }
-
-    // -------------------------------------------------------------------------
-    // Submission & Result Collections
-    // -------------------------------------------------------------------------
-
-    /**
-     * @description Controls access to student assignment submissions.
-     * @path /assignmentSubmissions/{submissionId}
-     * @allow (create) A student can create their own submission, setting their UID as the `studentId`.
-     * @deny (delete) A teacher cannot delete a student's submission. Only the student can.
-     * @principle A student owns their submission, and the designated teacher can view and grade it.
-     */
-    match /assignmentSubmissions/{submissionId} {
-      allow get: if isSubmissionOwner(resource.data) || isSubmissionGrader(resource.data);
-      allow list: if isSignedIn(); // Requires client to query by studentId or teacherId (QAP).
-      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
-      allow update: if resource != null && (isSubmissionOwner(resource.data) || isSubmissionGrader(resource.data)) && areSubmissionKeysImmutable('assignmentId');
-      allow delete: if resource != null && isSubmissionOwner(resource.data);
+    match /batches/{batchId}/projects/{projectId} {
+      allow get: if isStudentInBatch(batchId) || isTeacherForBatch(batchId) || isAdmin();
+      allow list: if isStudentInBatch(batchId) || isTeacherForBatch(batchId) || isAdmin();
+      allow create: if (isTeacherForBatch(batchId) || isAdmin()) && request.resource.data.batchId == batchId && request.resource.data.assignedByTeacherId == request.auth.uid;
+      allow update: if (isOwner(resource.data.assignedByTeacherId) || isAdmin()) && resource != null && request.resource.data.batchId == resource.data.batchId;
+      allow delete: if (isOwner(resource.data.assignedByTeacherId) || isAdmin()) && resource != null;
     }
 
     /**
-     * @description Controls access to student project submissions.
-     * @path /projectSubmissions/{submissionId}
-     * @allow (update) The student owner or teacher grader can update the submission (e.g., to add marks or feedback).
-     * @deny (get) A student `user_abc` cannot read a submission belonging to student `user_xyz`.
-     * @principle A student owns their submission, and the designated teacher can view and grade it.
+     * @description Rules for exams within a batch. Students in the batch can read. Teachers for the batch can create and manage.
+     * @path /batches/{batchId}/exams/{examId}
+     * @allow An admin (get) an exam at /batches/batch_a/exams/exam_789.
+     * @deny A student not in 'batch_a' (list) exams at /batches/batch_a/exams.
+     * @principle Enforces hierarchical access control where permissions are derived from the parent collection's scope (the batch).
      */
-    match /projectSubmissions/{submissionId} {
-      allow get: if isSubmissionOwner(resource.data) || isSubmissionGrader(resource.data);
-      allow list: if isSignedIn(); // Requires client to query by studentId or teacherId (QAP).
-      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
-      allow update: if resource != null && (isSubmissionOwner(resource.data) || isSubmissionGrader(resource.data)) && areSubmissionKeysImmutable('projectId');
-      allow delete: if resource != null && isSubmissionOwner(resource.data);
-    }
-
-    /**
-     * @description Controls access to student exam results.
-     * @path /examResults/{resultId}
-     * @allow (get) The student owner or teacher grader can view the exam result.
-     * @deny (create) Students cannot create their own exam results; this is a teacher/admin action.
-     * @principle A student owns their result data for reading, and the teacher can manage it.
-     */
-    match /examResults/{resultId} {
-      allow get: if isSubmissionOwner(resource.data) || isSubmissionGrader(resource.data);
-      allow list: if isSignedIn(); // Requires client to query by studentId or teacherId (QAP).
-      // create, update, delete should likely be teacher-only, but the IR is ambiguous.
-      // Defaulting to teacher can manage, student can only read.
-      allow create: if isSignedIn() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if resource != null && isSubmissionGrader(resource.data) && areSubmissionKeysImmutable('examId');
-      allow delete: if resource != null && isSubmissionGrader(resource.data);
-    }
-
-    /**
-     * @description Controls access to student marks for internal assessments.
-     * @path /internalAssessmentMarks/{markId}
-     * @allow (get) The student owner or teacher grader can view the mark.
-     * @deny (create) Students cannot create their own marks; this is a teacher/admin action.
-     * @principle A student owns their mark data for reading, and the teacher can manage it.
-     */
-    match /internalAssessmentMarks/{markId} {
-      allow get: if isSubmissionOwner(resource.data) || isSubmissionGrader(resource.data);
-      allow list: if isSignedIn(); // Requires client to query by studentId or teacherId (QAP).
-      // create, update, delete should likely be teacher-only, but the IR is ambiguous.
-      // Defaulting to teacher can manage, student can only read.
-      allow create: if isSignedIn() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if resource != null && isSubmissionGrader(resource.data) && areSubmissionKeysImmutable('internalAssessmentId');
-      allow delete: if resource != null && isSubmissionGrader(resource.data);
+    match /batches/{batchId}/exams/{examId} {
+      allow get: if isStudentInBatch(batchId) || isTeacherForBatch(batchId) || isAdmin();
+      allow list: if isStudentInBatch(batchId) || isTeacherForBatch(batchId) || isAdmin();
+      allow create: if (isTeacherForBatch(batchId) || isAdmin()) && request.resource.data.batchId == batchId && request.resource.data.assignedByTeacherId == request.auth.uid;
+      allow update: if (isOwner(resource.data.assignedByTeacherId) || isAdmin()) && resource != null && request.resource.data.batchId == resource.data.batchId;
+      allow delete: if (isOwner(resource.data.assignedByTeacherId) || isAdmin()) && resource != null;
     }
 
   }
