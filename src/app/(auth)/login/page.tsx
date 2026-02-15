@@ -111,14 +111,14 @@ export default function LoginPage() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
+              Or sign in with
             </span>
           </div>
         </div>
 
         <Button variant="outline" className="w-full" onClick={onGoogleSignIn}>
           <GoogleIcon className="mr-2 h-4 w-4" />
-          Continue with Google
+          Sign in with google
         </Button>
       </CardContent>
     </Card>
