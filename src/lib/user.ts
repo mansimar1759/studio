@@ -1,17 +1,42 @@
 "use client";
 
 import { initializeFirebase } from "@/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, DocumentData } from "firebase/firestore";
 
 const { firestore } = initializeFirebase();
 
-export const createUserProfile = async (uid: string, data: any) => {
+export const createUserProfile = async (uid: string, data: Partial<DocumentData>) => {
     const userDocRef = doc(firestore, "users", uid);
-    return await setDoc(userDocRef, {
-        uid,
-        ...data,
+    
+    const profileData = {
+        id: uid,
+        externalAuthId: data.externalAuthId || uid,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: data.role,
         createdAt: serverTimestamp(),
-    });
+    };
+    
+    await setDoc(userDocRef, profileData);
+
+    if (data.role === 'student') {
+        const studentProfileRef = doc(firestore, `users/${uid}/studentProfile`, uid);
+        await setDoc(studentProfileRef, {
+            id: uid,
+            userId: uid,
+            batchId: data.batchId,
+            academicYear: data.academicYear,
+        });
+    } else if (data.role === 'teacher') {
+        const teacherProfileRef = doc(firestore, `users/${uid}/teacherProfile`, uid);
+        await setDoc(teacherProfileRef, {
+            id: uid,
+            userId: uid,
+            subjectIds: data.subjectIds || [],
+            batchIds: data.batchIds || [],
+        });
+    }
 };
 
 export const getUserProfile = async (uid: string) => {
@@ -23,5 +48,3 @@ export const getUserProfile = async (uid: string) => {
         return null;
     }
 };
-
-    

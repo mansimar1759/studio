@@ -27,7 +27,6 @@ import { handleEmailSignUp, handleGoogleSignIn } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { GoogleIcon } from "@/components/icons/google";
-import { Separator } from "@/components/ui/separator";
 
 type Role = "student" | "teacher";
 
@@ -39,29 +38,39 @@ export default function SignupPage() {
   const [role, setRole] = useState<Role>("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [id, setId] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [batch, setBatch] = useState("");
-  const [semester, setSemester] = useState("");
+  const [academicYear, setAcademicYear] = useState("");
   const [subject, setSubject] = useState("");
   const [teacherBatch, setTeacherBatch] = useState("");
 
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isUserLoading && user) {
-      // User is logged in, check if they have a profile
-      getUserProfile(user.uid).then(profile => {
-        // A complete profile must have a role.
-        if (profile && profile.role) {
-          // They have a complete profile, send them to the dashboard
-          router.push('/dashboard');
-        } else {
-          // No profile, or incomplete profile (no role). They need to complete it.
-          setIsCompletingProfile(true);
-          setEmail(user.email || "");
-        }
-      });
+    if (!isUserLoading) {
+      if (user) {
+        // User is logged in, check if they have a profile
+        getUserProfile(user.uid).then(profile => {
+          if (profile && profile.role) {
+            // They have a complete profile, send them to the dashboard
+            router.push('/dashboard');
+          } else {
+            // No profile, or incomplete profile (no role). They need to complete it.
+            setIsCompletingProfile(true);
+            setEmail(user.email || "");
+            const nameParts = user.displayName?.split(' ') || [];
+            setFirstName(nameParts[0] || "");
+            setLastName(nameParts.slice(1).join(' ') || "");
+            setLoading(false);
+          }
+        });
+      } else {
+        // Not logged in, show regular signup form
+        setIsCompletingProfile(false);
+        setLoading(false);
+      }
     }
   }, [user, isUserLoading, router]);
 
@@ -72,10 +81,12 @@ export default function SignupPage() {
     const profileData = {
       role,
       email: isCompletingProfile ? user?.email : email,
-      displayName: isCompletingProfile ? user?.displayName : email,
-      batch: role === 'student' ? batch : teacherBatch,
-      semester: role === 'student' ? semester : '',
-      subject: role === 'teacher' ? subject : '',
+      firstName,
+      lastName,
+      batchId: role === 'student' ? batch : teacherBatch,
+      academicYear: role === 'student' ? parseInt(academicYear) : undefined,
+      subjectIds: role === 'teacher' ? [subject] : [],
+      batchIds: role === 'teacher' ? [teacherBatch] : [],
     };
 
     try {
@@ -85,7 +96,11 @@ export default function SignupPage() {
       } else {
         // Create a new email/password user and then their profile
         const userCredential = await handleEmailSignUp(email, password);
-        await createUserProfile(userCredential.user.uid, profileData);
+        await createUserProfile(userCredential.user.uid, {
+            ...profileData,
+            externalAuthId: userCredential.user.uid,
+            id: userCredential.user.uid,
+        });
       }
       toast({
         title: "Success!",
@@ -117,7 +132,7 @@ export default function SignupPage() {
   const onGoogleSignIn = async () => {
     try {
       await handleGoogleSignIn();
-      // The useEffect will handle redirection
+      // The useEffect will handle redirection or show the complete profile form
     } catch (error) {
       console.error(error);
       toast({
@@ -128,7 +143,7 @@ export default function SignupPage() {
     }
   };
   
-  if (isUserLoading || (user && !isCompletingProfile)) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <p>Loading...</p>
@@ -148,27 +163,34 @@ export default function SignupPage() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSignup} className="grid gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input id="firstName" placeholder="John" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input id="lastName" placeholder="Doe" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            </div>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isCompletingProfile} />
+          </div>
+
           {!isCompletingProfile && (
-            <>
-              <div className="grid gap-2">
-                <Label htmlFor="id">Your ID</Label>
-                <Input id="id" placeholder="Create a unique ID" required value={id} onChange={(e) => setId(e.target.value)} />
-              </div>
-               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-            </>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
           )}
 
           <div className="grid gap-2">
             <Label>I am a...</Label>
             <RadioGroup
               defaultValue="student"
+              value={role}
               onValueChange={(value: Role) => setRole(value)}
               className="grid grid-cols-2 gap-4"
             >
@@ -218,18 +240,14 @@ export default function SignupPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="semester">Semester</Label>
-                <Select onValueChange={setSemester} required>
-                  <SelectTrigger id="semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
+                <Label htmlFor="academicYear">Academic Year</Label>
+                <Select onValueChange={setAcademicYear} required>
+                  <SelectTrigger id="academicYear"><SelectValue placeholder="Select year" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Semester 1</SelectItem>
-                    <SelectItem value="2">Semester 2</SelectItem>
-                    <SelectItem value="3">Semester 3</SelectItem>
-                    <SelectItem value="4">Semester 4</SelectItem>
-                    <SelectItem value="5">Semester 5</SelectItem>
-                    <SelectItem value="6">Semester 6</SelectItem>
-                    <SelectItem value="7">Semester 7</SelectItem>
-                    <SelectItem value="8">Semester 8</SelectItem>
+                    <SelectItem value="1">1st Year</SelectItem>
+                    <SelectItem value="2">2nd Year</SelectItem>
+                    <SelectItem value="3">3rd Year</SelectItem>
+                    <SelectItem value="4">4th Year</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
