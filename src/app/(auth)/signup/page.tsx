@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -21,34 +21,149 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/firebase";
+import { createUserProfile, getUserProfile } from "@/lib/user";
+import { handleEmailSignUp, handleGoogleSignIn } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
+import { FirebaseError } from "firebase/app";
+import { GoogleIcon } from "@/components/icons/google";
+import { Separator } from "@/components/ui/separator";
 
 type Role = "student" | "teacher";
 
 export default function SignupPage() {
-  const [role, setRole] = useState<Role>("student");
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const { toast } = useToast();
 
-  const handleSignup = (e: React.FormEvent) => {
+  const [role, setRole] = useState<Role>("student");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [id, setId] = useState("");
+  const [batch, setBatch] = useState("");
+  const [semester, setSemester] = useState("");
+  const [subject, setSubject] = useState("");
+  const [teacherBatch, setTeacherBatch] = useState("");
+
+  const [isCompletingProfile, setIsCompletingProfile] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      // User is logged in, check if they have a profile
+      getUserProfile(user.uid).then(profile => {
+        if (!profile) {
+          // No profile, so they need to complete it
+          setIsCompletingProfile(true);
+          setEmail(user.email || "");
+        } else {
+          // They have a profile, send them to the dashboard
+          router.push('/dashboard');
+        }
+      });
+    }
+  }, [user, isUserLoading, router]);
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd handle form submission here.
-    // For this demo, we'll just redirect.
-    if (role === "student") {
-      router.push("/dashboard/student");
-    } else {
-      router.push("/dashboard/teacher");
+    setLoading(true);
+
+    const profileData = {
+      role,
+      email: isCompletingProfile ? user?.email : email,
+      displayName: isCompletingProfile ? user?.displayName : email,
+      batch: role === 'student' ? batch : teacherBatch,
+      semester: role === 'student' ? semester : '',
+      subject: role === 'teacher' ? subject : '',
+    };
+
+    try {
+      if (isCompletingProfile && user) {
+        // Just create the profile for the existing Google user
+        await createUserProfile(user.uid, profileData);
+      } else {
+        // Create a new email/password user and then their profile
+        const userCredential = await handleEmailSignUp(email, password);
+        await createUserProfile(userCredential.user.uid, profileData);
+      }
+      toast({
+        title: "Success!",
+        description: "Your account has been created.",
+      });
+      router.push("/dashboard");
+    } catch (error) {
+      console.error(error);
+      let title = "An error occurred.";
+      let description = "Please try again.";
+
+      if (error instanceof FirebaseError) {
+        if (error.code === 'auth/email-already-in-use') {
+          title = "Sign-up Failed";
+          description = "This email is already in use. Please sign in or use a different email.";
+        }
+      }
+      
+      toast({
+        variant: "destructive",
+        title: title,
+        description: description,
+      });
+    } finally {
+      setLoading(false);
     }
   };
+
+  const onGoogleSignIn = async () => {
+    try {
+      await handleGoogleSignIn();
+      // The useEffect will handle redirection
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Google Sign-In Failed",
+        description: "Could not sign in with Google. Please try again.",
+      });
+    }
+  };
+  
+  if (isUserLoading || (user && !isCompletingProfile)) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full">
       <CardHeader className="text-center space-y-2">
-        <CardTitle className="text-3xl font-headline">Create an Account</CardTitle>
+        <CardTitle className="text-3xl font-headline">
+          {isCompletingProfile ? "Complete Your Profile" : "Create an Account"}
+        </CardTitle>
         <CardDescription>
-          Join EduEase AI and start your journey to smarter learning.
+          {isCompletingProfile ? "Please provide a few more details to get started." : "Join EduEase AI and start your journey to smarter learning."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSignup} className="grid gap-4">
+          {!isCompletingProfile && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="id">Your ID</Label>
+                <Input id="id" placeholder="Create a unique ID" required value={id} onChange={(e) => setId(e.target.value)} />
+              </div>
+               <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+            </>
+          )}
+
           <div className="grid gap-2">
             <Label>I am a...</Label>
             <RadioGroup
@@ -80,21 +195,12 @@ export default function SignupPage() {
               </div>
             </RadioGroup>
           </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="id">Your ID</Label>
-            <Input id="id" placeholder="Create a unique ID" required />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required />
-          </div>
           
           {role === 'student' && (
             <>
               <div className="grid gap-2">
                 <Label htmlFor="batch">Batch</Label>
-                <Select>
+                <Select onValueChange={setBatch} required>
                   <SelectTrigger id="batch"><SelectValue placeholder="Select batch" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cse-aiml">CSE-AIML</SelectItem>
@@ -112,7 +218,7 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="semester">Semester</Label>
-                <Select>
+                <Select onValueChange={setSemester} required>
                   <SelectTrigger id="semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">Semester 1</SelectItem>
@@ -133,7 +239,7 @@ export default function SignupPage() {
              <>
               <div className="grid gap-2">
                 <Label htmlFor="subject">Subject</Label>
-                 <Select>
+                 <Select onValueChange={setSubject} required>
                   <SelectTrigger id="subject"><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="applied-physics">Applied Physics</SelectItem>
@@ -146,7 +252,7 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="teacher-batch">Batch</Label>
-                <Select>
+                <Select onValueChange={setTeacherBatch} required>
                   <SelectTrigger id="teacher-batch"><SelectValue placeholder="Select batch" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cse-aiml">CSE-AIML</SelectItem>
@@ -165,10 +271,31 @@ export default function SignupPage() {
             </>
           )}
 
-          <Button type="submit" className="w-full mt-4">
-            Sign Up
+          <Button type="submit" className="w-full mt-4" disabled={loading}>
+            {loading ? "Saving..." : (isCompletingProfile ? "Save Profile" : "Sign Up")}
           </Button>
         </form>
+
+        {!isCompletingProfile && (
+           <>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or sign up with
+                </span>
+              </div>
+            </div>
+
+            <Button variant="outline" className="w-full" onClick={onGoogleSignIn}>
+              <GoogleIcon className="mr-2 h-4 w-4" />
+              Continue with Google
+            </Button>
+           </>
+        )}
+
         <div className="mt-6 text-center text-sm">
           Already have an account?{" "}
           <Link href="/login" className="underline font-medium text-accent hover:text-primary">
@@ -179,3 +306,5 @@ export default function SignupPage() {
     </Card>
   );
 }
+
+    
