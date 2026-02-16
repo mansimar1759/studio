@@ -14,16 +14,24 @@ import {Button} from '@/components/ui/button';
 import {GoogleIcon} from '@/components/icons/google';
 import {handleGoogleSignIn, handleEmailSignIn} from '@/lib/auth';
 import {useRouter} from 'next/navigation';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {useToast} from '@/hooks/use-toast';
 import {FirebaseError} from 'firebase/app';
+import { useUser } from '@/firebase';
 
 export default function LoginPage() {
   const router = useRouter();
   const {toast} = useToast();
+  const { user, isUserLoading } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+        router.push('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
 
   const onSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,32 +63,20 @@ export default function LoginPage() {
   };
 
   const onGoogleSignIn = async () => {
+    setLoading(true);
     try {
       await handleGoogleSignIn();
-      router.push('/dashboard');
+      // The useEffect will handle the redirect to the dashboard
     } catch (error) {
       console.error(error);
-      let title = 'Google Sign-In Failed';
-      let description = 'An unknown error occurred. Please try again.';
-
-      if (error instanceof FirebaseError) {
-        if (
-          error.code === 'auth/popup-closed-by-user' ||
-          error.code === 'auth/cancelled-popup-request'
-        ) {
-          title = 'Sign-In Canceled';
-          description =
-            'The Google Sign-In window was closed before completion.';
-        } else {
-          description = `Could not sign in with Google. Please try again. (${error.code})`;
-        }
-      }
-
       toast({
         variant: 'destructive',
-        title: title,
-        description: description,
+        title: 'Sign-In Failed',
+        description:
+          'Could not complete sign-in with Google. Please try again.',
       });
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -128,12 +124,12 @@ export default function LoginPage() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or sign in with
+              Or
             </span>
           </div>
         </div>
 
-        <Button variant="outline" className="w-full" onClick={onGoogleSignIn}>
+        <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={loading}>
           <GoogleIcon className="mr-2 h-4 w-4" />
           Sign in with google
         </Button>

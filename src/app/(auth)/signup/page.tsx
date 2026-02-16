@@ -130,37 +130,24 @@ export default function SignupPage() {
   };
 
   const onGoogleSignIn = async () => {
+    setLoading(true);
     try {
       await handleGoogleSignIn();
       // The useEffect will handle redirection or show the complete profile form
     } catch (error) {
       console.error(error);
-      let title = "Google Sign-In Failed";
-      let description = "An unknown error occurred. Please try again.";
-
-      if (error instanceof FirebaseError) {
-        if (
-          error.code === "auth/popup-closed-by-user" ||
-          error.code === "auth/cancelled-popup-request"
-        ) {
-          title = "Sign-In Canceled";
-          description =
-            "The Google Sign-In window was closed before completion.";
-        } else {
-          // Handle other potential Firebase errors
-          description = `Could not complete sign-in. Please try again. (${error.code})`;
-        }
-      }
-
       toast({
-        variant: "destructive",
-        title: title,
-        description: description,
+        variant: 'destructive',
+        title: 'Sign-In Failed',
+        description:
+          'Could not complete sign-in with Google. Please try again.',
       });
+    } finally {
+        setLoading(false);
     }
   };
   
-  if (loading) {
+  if (loading && !isCompletingProfile) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <p>Loading...</p>
@@ -182,7 +169,7 @@ export default function SignupPage() {
         {!isCompletingProfile && (
            <>
             <div className="grid gap-4">
-              <Button variant="outline" className="w-full" onClick={onGoogleSignIn}>
+              <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={loading}>
                 <GoogleIcon className="mr-2 h-4 w-4" />
                 Continue with Google
               </Button>
@@ -333,12 +320,14 @@ export default function SignupPage() {
           </Button>
         </form>
 
-        <div className="mt-6 text-center text-sm">
-          Already have an account?{" "}
-          <Link href="/login" className="underline font-medium text-accent hover:text-primary">
-            Sign in
-          </Link>
-        </div>
+        {!isCompletingProfile && (
+          <div className="mt-6 text-center text-sm">
+            Already have an account?{" "}
+            <Link href="/login" className="underline font-medium text-accent hover:text-primary">
+              Sign in
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
