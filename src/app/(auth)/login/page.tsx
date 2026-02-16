@@ -11,7 +11,7 @@ import {
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Button} from '@/components/ui/button';
-import {handleEmailSignIn} from '@/lib/auth';
+import { handleEmailSignIn, handleGoogleSignIn } from '@/lib/auth';
 import {useRouter} from 'next/navigation';
 import {useState, useEffect} from 'react';
 import {useToast} from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ import {FirebaseError} from 'firebase/app';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/firebase';
+import { GoogleIcon } from '@/components/icons/google';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,7 +47,23 @@ export default function LoginPage() {
     // If no user, do nothing and show the login page.
   }, [user, profile, isLoading, router]);
 
-  const onSignIn = async (e: React.FormEvent) => {
+  const onGoogleSignIn = async () => {
+    try {
+        await handleGoogleSignIn(auth);
+        // The useEffect hook will handle the redirect once the user state is updated.
+    } catch (error) {
+        console.error(error);
+        if (error instanceof FirebaseError && error.code !== 'auth/popup-closed-by-user') {
+            toast({
+                variant: 'destructive',
+                title: 'Sign-in Failed',
+                description: 'Could not sign in with Google. Please try again.',
+            });
+        }
+    }
+  }
+
+  const onEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await handleEmailSignIn(auth, email, password);
@@ -85,11 +102,27 @@ export default function LoginPage() {
       <CardHeader className="space-y-2 text-center">
         <CardTitle className="font-headline text-3xl">Welcome Back!</CardTitle>
         <CardDescription>
-          Enter your credentials to access your dashboard.
+          Sign in to access your dashboard.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={onSignIn} className="grid gap-4">
+      <CardContent className="grid gap-6">
+        <Button variant="outline" onClick={onGoogleSignIn} disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+            Sign up with Google
+        </Button>
+
+        <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                </span>
+            </div>
+        </div>
+
+        <form onSubmit={onEmailSignIn} className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -113,11 +146,9 @@ export default function LoginPage() {
               disabled={isLoading}
             />
           </div>
-          <div className="flex flex-col space-y-2 pt-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Loading...' : 'Login'}
-            </Button>
-          </div>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Loading...' : 'Sign in with Email'}
+          </Button>
         </form>
       </CardContent>
     </Card>

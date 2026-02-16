@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -23,12 +22,13 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { createUserProfile } from "@/lib/user";
-import { handleEmailSignUp } from "@/lib/auth";
+import { handleEmailSignUp, handleGoogleSignIn } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Loader2 } from "lucide-react";
 import { useAuth, useFirestore } from "@/firebase";
+import { GoogleIcon } from "@/components/icons/google";
 
 type Role = "student" | "teacher";
 
@@ -72,9 +72,28 @@ export default function SignupPage() {
     }
   }, [user, profile, isLoading, router]);
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const onGoogleSignUp = async () => {
+    try {
+        await handleGoogleSignIn(auth);
+        // The useEffect hook will handle showing the profile completion form.
+    } catch (error) {
+        console.error(error);
+        if (error instanceof FirebaseError && error.code !== 'auth/popup-closed-by-user') {
+            toast({
+                variant: 'destructive',
+                title: 'Sign-up Failed',
+                description: 'Could not sign up with Google. Please try again.',
+            });
+        }
+    }
+  };
+
+  const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!role) {
+    
+    // For email signup, a role is not selected until the second step, so we don't validate here.
+    // However, if it's the final profile submission, role must be set.
+    if (isCompletingProfile && !role) {
         toast({
             variant: "destructive",
             title: "Validation Error",
@@ -97,7 +116,7 @@ export default function SignupPage() {
     try {
       let userId;
       if (isCompletingProfile && user) {
-        // User is completing their profile after a failed initial profile creation.
+        // User is completing their profile after a Google sign-in.
         userId = user.uid;
       } else {
         // A new user is signing up with email and password.
@@ -140,18 +159,74 @@ export default function SignupPage() {
     );
   }
 
+  if (!isCompletingProfile) {
+    return (
+        <Card className="w-full">
+            <CardHeader className="text-center space-y-2">
+                <CardTitle className="text-3xl font-headline">
+                Create an Account
+                </CardTitle>
+                <CardDescription>
+                Sign up with Google to get started.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="grid gap-6">
+                    <Button variant="outline" onClick={onGoogleSignUp} disabled={isLoading} className="w-full">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                        Sign up with Google
+                    </Button>
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                                Or continue with email
+                            </span>
+                        </div>
+                    </div>
+                    <form onSubmit={handleEmailSignup} className="grid gap-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                            <Label htmlFor="firstName-initial">First Name</Label>
+                            <Input id="firstName-initial" placeholder="John" required value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={isLoading} />
+                            </div>
+                            <div className="grid gap-2">
+                            <Label htmlFor="lastName-initial">Last Name</Label>
+                            <Input id="lastName-initial" placeholder="Doe" required value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={isLoading} />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="email-initial">Email</Label>
+                            <Input id="email-initial" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="password-initial">Password</Label>
+                            <Input id="password-initial" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                           {isLoading ? "Loading..." : "Sign Up with Email"}
+                        </Button>
+                    </form>
+                </div>
+            </CardContent>
+        </Card>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader className="text-center space-y-2">
         <CardTitle className="text-3xl font-headline">
-          {isCompletingProfile ? "Complete Your Profile" : "Create an Account"}
+          Complete Your Profile
         </CardTitle>
         <CardDescription>
-          {isCompletingProfile ? "Please provide a few more details to get started." : "Join EduEase and start your journey to smarter learning."}
+          Please provide a few more details to get started.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSignup} className="grid gap-4">
+        <form onSubmit={handleEmailSignup} className="grid gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="firstName">First Name</Label>
@@ -165,15 +240,8 @@ export default function SignupPage() {
           
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isCompletingProfile || isLoading} />
+            <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled />
           </div>
-
-          {!isCompletingProfile && (
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
-            </div>
-          )}
 
           <div className="grid gap-2">
             <Label>I am a...</Label>
@@ -280,18 +348,9 @@ export default function SignupPage() {
           )}
 
           <Button type="submit" className="w-full mt-4" disabled={isLoading}>
-            {isLoading ? "Loading..." : (isCompletingProfile ? "Save Profile" : "Sign Up")}
+            {isLoading ? "Loading..." : "Save Profile"}
           </Button>
         </form>
-
-        {!isCompletingProfile && (
-          <div className="mt-6 text-center text-sm">
-            Already have an account?{" "}
-            <Link href="/login" className="underline font-medium text-accent hover:text-primary">
-              Sign in
-            </Link>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
