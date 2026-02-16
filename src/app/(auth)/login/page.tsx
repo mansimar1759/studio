@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -25,9 +24,11 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
+    // This effect redirects the user to the dashboard if they are logged in.
     if (!isUserLoading && user) {
         router.push('/dashboard');
     }
@@ -35,10 +36,10 @@ export default function LoginPage() {
 
   const onSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setEmailLoading(true);
     try {
       await handleEmailSignIn(email, password);
-      router.push('/dashboard');
+      // The useEffect hook will handle the redirect once the user state is updated.
     } catch (error) {
       console.error(error);
       let title = 'An error occurred.';
@@ -58,15 +59,15 @@ export default function LoginPage() {
         description: description,
       });
     } finally {
-      setLoading(false);
+      setEmailLoading(false);
     }
   };
 
   const onGoogleSignIn = async () => {
-    setLoading(true);
+    setGoogleLoading(true);
     try {
       await handleGoogleSignIn();
-      // The useEffect will handle the redirect to the dashboard
+      // The useEffect hook will handle the redirect once the user state is updated.
     } catch (error) {
       console.error(error);
       toast({
@@ -76,9 +77,11 @@ export default function LoginPage() {
           'Could not complete sign-in with Google. Please try again.',
       });
     } finally {
-        setLoading(false);
+        setGoogleLoading(false);
     }
   };
+
+  const isFormDisabled = emailLoading || googleLoading;
 
   return (
     <Card className="w-full">
@@ -99,6 +102,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
+              disabled={isFormDisabled}
             />
           </div>
           <div className="grid gap-2">
@@ -109,11 +113,12 @@ export default function LoginPage() {
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
+              disabled={isFormDisabled}
             />
           </div>
           <div className="flex flex-col space-y-2 pt-4">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login'}
+            <Button type="submit" className="w-full" disabled={isFormDisabled}>
+              {emailLoading ? 'Logging in...' : 'Login'}
             </Button>
           </div>
         </form>
@@ -129,9 +134,15 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={loading}>
-          <GoogleIcon className="mr-2 h-4 w-4" />
-          Sign in with google
+        <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={isFormDisabled}>
+          {googleLoading ? (
+            'Signing in...'
+          ) : (
+            <>
+              <GoogleIcon className="mr-2 h-4 w-4" />
+              Sign in with google
+            </>
+          )}
         </Button>
       </CardContent>
     </Card>

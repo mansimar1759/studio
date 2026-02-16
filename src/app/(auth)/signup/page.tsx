@@ -46,37 +46,37 @@ export default function SignupPage() {
   const [teacherBatch, setTeacherBatch] = useState("");
 
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
-  const [loading, setLoading] = useState(true);
-
+  const [formLoading, setFormLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  
+  // This effect handles all authentication-related routing logic.
   useEffect(() => {
     if (!isUserLoading) {
       if (user) {
-        // User is logged in, check if they have a profile
+        // User is logged in, check for a profile.
         getUserProfile(user.uid).then(profile => {
           if (profile && profile.role) {
-            // They have a complete profile, send them to the dashboard
+            // Profile is complete, go to the dashboard.
             router.push('/dashboard');
           } else {
-            // No profile, or incomplete profile (no role). They need to complete it.
+            // New user or incomplete profile, show the profile completion form.
             setIsCompletingProfile(true);
             setEmail(user.email || "");
             const nameParts = user.displayName?.split(' ') || [];
             setFirstName(nameParts[0] || "");
             setLastName(nameParts.slice(1).join(' ') || "");
-            setLoading(false);
           }
         });
       } else {
-        // Not logged in, show regular signup form
+        // User is not logged in, show the standard signup form.
         setIsCompletingProfile(false);
-        setLoading(false);
       }
     }
   }, [user, isUserLoading, router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setFormLoading(true);
 
     const profileData = {
       role,
@@ -91,10 +91,10 @@ export default function SignupPage() {
 
     try {
       if (isCompletingProfile && user) {
-        // Just create the profile for the existing Google user
+        // User signed in with Google and is now completing their profile.
         await createUserProfile(user.uid, profileData);
       } else {
-        // Create a new email/password user and then their profile
+        // A new user is signing up with email and password.
         const userCredential = await handleEmailSignUp(email, password);
         await createUserProfile(userCredential.user.uid, {
             ...profileData,
@@ -102,11 +102,7 @@ export default function SignupPage() {
             id: userCredential.user.uid,
         });
       }
-      toast({
-        title: "Success!",
-        description: "Your account has been created.",
-      });
-      router.push("/dashboard");
+      // The useEffect will handle redirecting to the dashboard after the user state updates.
     } catch (error) {
       console.error(error);
       let title = "An error occurred.";
@@ -125,35 +121,37 @@ export default function SignupPage() {
         description: description,
       });
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
 
   const onGoogleSignIn = async () => {
-    setLoading(true);
+    setGoogleLoading(true);
     try {
       await handleGoogleSignIn();
-      // The useEffect will handle redirection or show the complete profile form
+      // The useEffect hook will handle showing the profile form or redirecting.
     } catch (error) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'Sign-In Failed',
-        description:
-          'Could not complete sign-in with Google. Please try again.',
+        description: 'Could not complete sign-in with Google. Please try again.',
       });
     } finally {
-        setLoading(false);
+        setGoogleLoading(false);
     }
   };
   
-  if (loading && !isCompletingProfile) {
+  // Show a loading indicator while Firebase checks the initial auth state.
+  if (isUserLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <p>Loading...</p>
       </div>
     );
   }
+
+  const isFormDisabled = formLoading || googleLoading;
 
   return (
     <Card className="w-full">
@@ -169,9 +167,13 @@ export default function SignupPage() {
         {!isCompletingProfile && (
            <>
             <div className="grid gap-4">
-              <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={loading}>
-                <GoogleIcon className="mr-2 h-4 w-4" />
-                Continue with Google
+              <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={isFormDisabled}>
+                {googleLoading ? "Redirecting..." : (
+                  <>
+                    <GoogleIcon className="mr-2 h-4 w-4" />
+                    Continue with Google
+                  </>
+                )}
               </Button>
             </div>
             <div className="relative my-6">
@@ -191,33 +193,33 @@ export default function SignupPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" placeholder="John" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              <Input id="firstName" placeholder="John" required value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={isFormDisabled} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" placeholder="Doe" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              <Input id="lastName" placeholder="Doe" required value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={isFormDisabled} />
             </div>
           </div>
           
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isCompletingProfile} />
+            <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isCompletingProfile || isFormDisabled} />
           </div>
 
           {!isCompletingProfile && (
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isFormDisabled} />
             </div>
           )}
 
           <div className="grid gap-2">
             <Label>I am a...</Label>
             <RadioGroup
-              defaultValue="student"
               value={role}
               onValueChange={(value: Role) => setRole(value)}
               className="grid grid-cols-2 gap-4"
+              disabled={isFormDisabled}
             >
               <div>
                 <RadioGroupItem value="student" id="student" className="peer sr-only" />
@@ -248,7 +250,7 @@ export default function SignupPage() {
             <>
               <div className="grid gap-2">
                 <Label htmlFor="batch">Batch</Label>
-                <Select onValueChange={setBatch} required>
+                <Select onValueChange={setBatch} required disabled={isFormDisabled}>
                   <SelectTrigger id="batch"><SelectValue placeholder="Select batch" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cse-aiml">CSE-AIML</SelectItem>
@@ -266,7 +268,7 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="academicYear">Academic Year</Label>
-                <Select onValueChange={setAcademicYear} required>
+                <Select onValueChange={setAcademicYear} required disabled={isFormDisabled}>
                   <SelectTrigger id="academicYear"><SelectValue placeholder="Select year" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">1st Year</SelectItem>
@@ -283,7 +285,7 @@ export default function SignupPage() {
              <>
               <div className="grid gap-2">
                 <Label htmlFor="subject">Subject</Label>
-                 <Select onValueChange={setSubject} required>
+                 <Select onValueChange={setSubject} required disabled={isFormDisabled}>
                   <SelectTrigger id="subject"><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="applied-physics">Applied Physics</SelectItem>
@@ -296,7 +298,7 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="teacher-batch">Batch</Label>
-                <Select onValueChange={setTeacherBatch} required>
+                <Select onValueChange={setTeacherBatch} required disabled={isFormDisabled}>
                   <SelectTrigger id="teacher-batch"><SelectValue placeholder="Select batch" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cse-aiml">CSE-AIML</SelectItem>
@@ -315,8 +317,8 @@ export default function SignupPage() {
             </>
           )}
 
-          <Button type="submit" className="w-full mt-4" disabled={loading || isUserLoading}>
-            {loading ? "Saving..." : (isCompletingProfile ? "Save Profile" : "Sign Up")}
+          <Button type="submit" className="w-full mt-4" disabled={isFormDisabled}>
+            {formLoading ? "Saving..." : (isCompletingProfile ? "Save Profile" : "Sign Up")}
           </Button>
         </form>
 
