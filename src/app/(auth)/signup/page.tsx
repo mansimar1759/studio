@@ -77,7 +77,6 @@ export default function SignupPage() {
         await handleGoogleSignIn(auth);
         // The useEffect hook will handle showing the profile completion form.
     } catch (error) {
-        console.error(error);
         if (error instanceof FirebaseError && error.code !== 'auth/popup-closed-by-user') {
             toast({
                 variant: 'destructive',
