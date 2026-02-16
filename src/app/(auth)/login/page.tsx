@@ -11,8 +11,7 @@ import {
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Button} from '@/components/ui/button';
-import {GoogleIcon} from '@/components/icons/google';
-import {handleGoogleSignIn, handleEmailSignIn} from '@/lib/auth';
+import {handleEmailSignIn} from '@/lib/auth';
 import {useRouter} from 'next/navigation';
 import {useState, useEffect} from 'react';
 import {useToast} from '@/hooks/use-toast';
@@ -73,26 +72,6 @@ export default function LoginPage() {
     }
   };
 
-  const onGoogleSignIn = async () => {
-    try {
-      await handleGoogleSignIn(auth);
-      // The redirection is handled by the useEffect hook, so no action is needed here on success.
-    } catch (error) {
-      if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
-        // User closed the popup, this is not an actual error, so we can ignore it.
-        console.log("Google Sign-In popup closed by user.");
-      } else {
-        // Handle other errors
-        console.error("An unexpected error occurred during Google Sign-In:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Sign-In Failed',
-          description: 'Could not complete sign-in with Google. Please try again.',
-        });
-      }
-    }
-  };
-
   if (isLoading && !user) { // Show loader only on initial page load
     return (
       <div className="flex items-center justify-center p-8">
@@ -140,28 +119,6 @@ export default function LoginPage() {
             </Button>
           </div>
         </form>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or sign in with google
-            </span>
-          </div>
-        </div>
-
-        <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={isLoading}>
-          {isLoading ? (
-            'Loading...'
-          ) : (
-            <>
-              <GoogleIcon className="mr-2 h-4 w-4" />
-              Sign in with google
-            </>
-          )}
-        </Button>
       </CardContent>
     </Card>
   );

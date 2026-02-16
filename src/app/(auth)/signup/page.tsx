@@ -23,10 +23,9 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { createUserProfile } from "@/lib/user";
-import { handleEmailSignUp, handleGoogleSignIn } from "@/lib/auth";
+import { handleEmailSignUp } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
-import { GoogleIcon } from "@/components/icons/google";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Loader2 } from "lucide-react";
 import { useAuth, useFirestore } from "@/firebase";
@@ -98,7 +97,7 @@ export default function SignupPage() {
     try {
       let userId;
       if (isCompletingProfile && user) {
-        // User signed in with Google and is now completing their profile.
+        // User is completing their profile after a failed initial profile creation.
         userId = user.uid;
       } else {
         // A new user is signing up with email and password.
@@ -132,25 +131,6 @@ export default function SignupPage() {
       });
     }
   };
-
-  const onGoogleSignIn = async () => {
-    try {
-        await handleGoogleSignIn(auth);
-        // The useEffect hook will handle redirecting or showing the profile completion form.
-    } catch (error) {
-        if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
-            // This is a common user action, so we don't need to show an error toast.
-            console.log("Google Sign-In popup closed by user.");
-        } else {
-            console.error("An unexpected error occurred during Google Sign-In:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Sign-In Failed',
-                description: 'Could not complete sign-in with Google. Please try again.',
-            });
-        }
-    }
-  };
   
   if (isLoading && !user) {
     return (
@@ -171,31 +151,6 @@ export default function SignupPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!isCompletingProfile && (
-           <>
-            <div className="grid gap-4">
-              <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={isLoading}>
-                {isLoading ? "Loading..." : (
-                  <>
-                    <GoogleIcon className="mr-2 h-4 w-4" />
-                    Continue with Google
-                  </>
-                )}
-              </Button>
-            </div>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or sign up with email
-                </span>
-              </div>
-            </div>
-           </>
-        )}
-
         <form onSubmit={handleSignup} className="grid gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
