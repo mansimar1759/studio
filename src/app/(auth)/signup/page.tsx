@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -123,11 +124,7 @@ export default function SignupPage() {
         userId = userCredential.user.uid;
       }
       
-      await createUserProfile(firestore, userId, {
-        ...profileData,
-        id: userId,
-        externalAuthId: userId
-      });
+      await createUserProfile(firestore, userId, profileData);
 
       // The useEffect will handle redirecting to the dashboard after the user state updates.
     } catch (error) {
