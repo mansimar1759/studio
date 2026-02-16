@@ -75,13 +75,17 @@ export default function LoginPage() {
     }
   };
 
-  const onGoogleSignIn = () => {
+  const onGoogleSignIn = async () => {
     setGoogleLoading(true);
-    // Don't 'await'. Let the onAuthStateChanged listener and useEffect handle the rest.
-    handleGoogleSignIn().catch((error) => {
+    try {
+      await handleGoogleSignIn();
+      // The redirection is handled by the useEffect hook, so no action is needed here on success.
+    } catch (error) {
       if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
-        console.log("Google Sign-In popup closed by user. This is an expected behavior.");
+        // User closed the popup, this is not an actual error, so we can ignore it.
+        console.log("Google Sign-In popup closed by user.");
       } else {
+        // Handle other errors
         console.error("An unexpected error occurred during Google Sign-In:", error);
         toast({
           variant: 'destructive',
@@ -89,9 +93,9 @@ export default function LoginPage() {
           description: 'Could not complete sign-in with Google. Please try again.',
         });
       }
-    }).finally(() => {
+    } finally {
         setGoogleLoading(false);
-    });
+    }
   };
 
   if (isLoading) {
