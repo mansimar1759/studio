@@ -17,14 +17,12 @@ import {useToast} from '@/hooks/use-toast';
 import {FirebaseError} from 'firebase/app';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/firebase';
 import { GoogleIcon } from '@/components/icons/google';
 
 export default function LoginPage() {
   const router = useRouter();
   const {toast} = useToast();
   const { user, profile, isLoading } = useUserProfile();
-  const auth = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -47,7 +45,7 @@ export default function LoginPage() {
 
   const onGoogleSignIn = async () => {
     try {
-        await handleGoogleSignIn(auth);
+        await handleGoogleSignIn();
         // The useEffect hook will handle the redirect once the user state is updated.
     } catch (error) {
         if (error instanceof FirebaseError && error.code !== 'auth/popup-closed-by-user') {
@@ -63,7 +61,7 @@ export default function LoginPage() {
   const onEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await handleEmailSignIn(auth, email, password);
+      await handleEmailSignIn(email, password);
       // The useEffect hook will handle the redirect once the user state is updated.
     } catch (error) {
       console.error(error);

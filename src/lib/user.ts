@@ -1,9 +1,10 @@
 
 "use client";
 
-import { doc, getDoc, setDoc, serverTimestamp, DocumentData, Firestore } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, DocumentData } from "firebase/firestore";
+import { firestore } from "@/firebase";
 
-export const createUserProfile = async (firestore: Firestore, uid: string, data: Partial<DocumentData>) => {
+export const createUserProfile = async (uid: string, data: Partial<DocumentData>) => {
     
     if (data.role === 'student') {
         const studentDocRef = doc(firestore, "students", uid);
@@ -34,7 +35,7 @@ export const createUserProfile = async (firestore: Firestore, uid: string, data:
     }
 };
 
-export const getUserProfile = async (firestore: Firestore, uid: string) => {
+export const getUserProfile = async (uid: string) => {
     // Try to get from 'students' collection first
     const studentDocRef = doc(firestore, "students", uid);
     const studentDocSnap = await getDoc(studentDocRef);

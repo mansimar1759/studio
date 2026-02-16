@@ -28,7 +28,6 @@ import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Loader2 } from "lucide-react";
-import { useAuth, useFirestore } from "@/firebase";
 import { GoogleIcon } from "@/components/icons/google";
 
 type Role = "student" | "teacher";
@@ -37,8 +36,6 @@ export default function SignupPage() {
   const { user, profile, isLoading } = useUserProfile();
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuth();
-  const firestore = useFirestore();
 
   const [role, setRole] = useState<Role>("student");
   const [email, setEmail] = useState("");
@@ -75,7 +72,7 @@ export default function SignupPage() {
 
   const onGoogleSignUp = async () => {
     try {
-        await handleGoogleSignIn(auth);
+        await handleGoogleSignIn();
         // The useEffect hook will handle showing the profile completion form.
     } catch (error) {
         if (error instanceof FirebaseError && error.code !== 'auth/popup-closed-by-user') {
@@ -120,11 +117,11 @@ export default function SignupPage() {
         userId = user.uid;
       } else {
         // A new user is signing up with email and password.
-        const userCredential = await handleEmailSignUp(auth, email, password);
+        const userCredential = await handleEmailSignUp(email, password);
         userId = userCredential.user.uid;
       }
       
-      await createUserProfile(firestore, userId, profileData);
+      await createUserProfile(userId, profileData);
 
       // The useEffect will handle redirecting to the dashboard after the user state updates.
     } catch (error) {
