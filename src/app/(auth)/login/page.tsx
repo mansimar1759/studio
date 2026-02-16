@@ -23,7 +23,7 @@ import { GoogleIcon } from '@/components/icons/google';
 export default function LoginPage() {
   const router = useRouter();
   const {toast} = useToast();
-  const { user, profile, isLoading } = useUserProfile();
+  const { user, isLoading } = useUserProfile();
   const auth = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,20 +31,16 @@ export default function LoginPage() {
   useEffect(() => {
     // This effect handles redirection based on auth state.
     if (isLoading) {
-      return; // Wait until user and profile are loaded.
+      return; // Wait until user auth state is loaded.
     }
 
     if (user) {
-      if (profile) {
-        // User is logged in and has a profile, send to dashboard.
-        router.replace('/dashboard');
-      } else {
-        // User is logged in but has no profile, send to sign-up to complete it.
-        router.replace('/signup');
-      }
+      // User is logged in, redirect to the dashboard router.
+      // The dashboard will handle whether to show the dashboard or profile completion.
+      router.replace('/dashboard');
     }
     // If no user, do nothing and show the login page.
-  }, [user, profile, isLoading, router]);
+  }, [user, isLoading, router]);
 
   const onGoogleSignIn = async () => {
     try {
@@ -146,7 +142,7 @@ export default function LoginPage() {
 
         <Button variant="outline" onClick={onGoogleSignIn} disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
-            Sign up with Google
+            Sign in with Google
         </Button>
       </CardContent>
     </Card>
