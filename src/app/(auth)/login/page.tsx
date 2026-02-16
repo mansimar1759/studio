@@ -23,24 +23,27 @@ import { GoogleIcon } from '@/components/icons/google';
 export default function LoginPage() {
   const router = useRouter();
   const {toast} = useToast();
-  const { user, isLoading } = useUserProfile();
+  const { user, profile, isLoading } = useUserProfile();
   const auth = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   useEffect(() => {
-    // This effect handles redirection based on auth state.
     if (isLoading) {
-      return; // Wait until user auth state is loaded.
+      return; // Wait for auth and profile to load
     }
 
     if (user) {
-      // User is logged in, redirect to the dashboard router.
-      // The dashboard will handle whether to show the dashboard or profile completion.
-      router.replace('/dashboard');
+      if (profile) {
+        // User is logged in and has a profile, go to dashboard
+        router.replace('/dashboard');
+      } else {
+        // User is logged in but has NO profile, go to signup to complete it
+        router.replace('/signup');
+      }
     }
-    // If no user, do nothing and show the login page.
-  }, [user, isLoading, router]);
+    // If no user, do nothing, show login page.
+  }, [user, profile, isLoading, router]);
 
   const onGoogleSignIn = async () => {
     try {
