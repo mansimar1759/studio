@@ -139,16 +139,17 @@ export default function SignupPage() {
     setGoogleLoading(true);
     // Don't 'await'. Let the onAuthStateChanged listener handle the next steps.
     handleGoogleSignIn().catch((error) => {
-      console.error(error);
-       if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
-          // This is a common user action, so we don't need to show an error toast.
-          return;
+      if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
+        // This is a common user action, so we don't need to show an error toast.
+        console.log("Google Sign-In popup closed by user. This is an expected behavior.");
+      } else {
+        console.error("An unexpected error occurred during Google Sign-In:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Sign-In Failed',
+          description: 'Could not complete sign-in with Google. Please try again.',
+        });
       }
-      toast({
-        variant: 'destructive',
-        title: 'Sign-In Failed',
-        description: 'Could not complete sign-in with Google. Please try again.',
-      });
     }).finally(() => {
         setGoogleLoading(false);
     });
