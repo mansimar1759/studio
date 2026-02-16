@@ -16,23 +16,35 @@ import {useRouter} from 'next/navigation';
 import {useState, useEffect} from 'react';
 import {useToast} from '@/hooks/use-toast';
 import {FirebaseError} from 'firebase/app';
-import { useUser } from '@/firebase';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const {toast} = useToast();
-  const { user, isUserLoading } = useUser();
+  const { user, profile, isLoading } = useUserProfile();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
-    // This effect redirects the user to the dashboard if they are logged in.
-    if (!isUserLoading && user) {
-        router.push('/dashboard');
+    // This effect handles redirection based on auth state.
+    if (isLoading) {
+      return; // Wait until user and profile are loaded.
     }
-  }, [user, isUserLoading, router]);
+
+    if (user) {
+      if (profile) {
+        // User is logged in and has a profile, send to dashboard.
+        router.push('/dashboard');
+      } else {
+        // User is logged in but has no profile, send to sign-up to complete it.
+        router.push('/signup');
+      }
+    }
+    // If no user, do nothing and show the login page.
+  }, [user, profile, isLoading, router]);
 
   const onSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,10 +77,9 @@ export default function LoginPage() {
 
   const onGoogleSignIn = () => {
     setGoogleLoading(true);
-    // Don't 'await'. Let the onAuthStateChanged listener handle the redirect.
+    // Don't 'await'. Let the onAuthStateChanged listener and useEffect handle the rest.
     handleGoogleSignIn().catch((error) => {
       if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
-        // This is a common user action, so we don't need to show an error toast.
         console.log("Google Sign-In popup closed by user. This is an expected behavior.");
       } else {
         console.error("An unexpected error occurred during Google Sign-In:", error);
@@ -82,6 +93,14 @@ export default function LoginPage() {
         setGoogleLoading(false);
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   const isFormDisabled = emailLoading || googleLoading;
 
@@ -131,7 +150,7 @@ export default function LoginPage() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or
+              Or sign in with google
             </span>
           </div>
         </div>
