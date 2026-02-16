@@ -48,8 +48,6 @@ export default function SignupPage() {
   const [teacherBatch, setTeacherBatch] = useState("");
 
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   
   useEffect(() => {
     if (isLoading) {
@@ -82,7 +80,6 @@ export default function SignupPage() {
         });
         return;
     }
-    setFormLoading(true);
 
     const profileData = {
       role,
@@ -130,13 +127,10 @@ export default function SignupPage() {
         title: title,
         description: description,
       });
-    } finally {
-      setFormLoading(false);
     }
   };
 
   const onGoogleSignIn = async () => {
-    setGoogleLoading(true);
     try {
         await handleGoogleSignIn();
         // The useEffect hook will handle redirecting or showing the profile completion form.
@@ -152,20 +146,16 @@ export default function SignupPage() {
                 description: 'Could not complete sign-in with Google. Please try again.',
             });
         }
-    } finally {
-        setGoogleLoading(false);
     }
   };
   
-  if (isLoading && !isCompletingProfile) {
+  if (isLoading && !user) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
-
-  const isFormDisabled = formLoading || googleLoading;
 
   return (
     <Card className="w-full">
@@ -181,8 +171,8 @@ export default function SignupPage() {
         {!isCompletingProfile && (
            <>
             <div className="grid gap-4">
-              <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={isFormDisabled}>
-                {googleLoading ? "Redirecting..." : (
+              <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={isLoading}>
+                {isLoading ? "Loading..." : (
                   <>
                     <GoogleIcon className="mr-2 h-4 w-4" />
                     Continue with Google
@@ -207,23 +197,23 @@ export default function SignupPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" placeholder="John" required value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={isFormDisabled} />
+              <Input id="firstName" placeholder="John" required value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={isLoading} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" placeholder="Doe" required value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={isFormDisabled} />
+              <Input id="lastName" placeholder="Doe" required value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={isLoading} />
             </div>
           </div>
           
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isCompletingProfile || isFormDisabled} />
+            <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isCompletingProfile || isLoading} />
           </div>
 
           {!isCompletingProfile && (
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isFormDisabled} />
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
             </div>
           )}
 
@@ -233,7 +223,7 @@ export default function SignupPage() {
               value={role}
               onValueChange={(value: Role) => setRole(value)}
               className="grid grid-cols-2 gap-4"
-              disabled={isFormDisabled}
+              disabled={isLoading}
             >
               <div>
                 <RadioGroupItem value="student" id="student" className="peer sr-only" />
@@ -264,7 +254,7 @@ export default function SignupPage() {
             <>
               <div className="grid gap-2">
                 <Label htmlFor="batch">Batch</Label>
-                <Select onValueChange={setBatch} required disabled={isFormDisabled}>
+                <Select onValueChange={setBatch} required disabled={isLoading}>
                   <SelectTrigger id="batch"><SelectValue placeholder="Select batch" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cse-aiml">CSE-AIML</SelectItem>
@@ -282,7 +272,7 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="academicYear">Academic Year</Label>
-                <Select onValueChange={setAcademicYear} required disabled={isFormDisabled}>
+                <Select onValueChange={setAcademicYear} required disabled={isLoading}>
                   <SelectTrigger id="academicYear"><SelectValue placeholder="Select year" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">1st Year</SelectItem>
@@ -299,7 +289,7 @@ export default function SignupPage() {
              <>
               <div className="grid gap-2">
                 <Label htmlFor="subject">Subject</Label>
-                 <Select onValueChange={setSubject} required disabled={isFormDisabled}>
+                 <Select onValueChange={setSubject} required disabled={isLoading}>
                   <SelectTrigger id="subject"><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="applied-physics">Applied Physics</SelectItem>
@@ -312,7 +302,7 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="teacher-batch">Batch</Label>
-                <Select onValueChange={setTeacherBatch} required disabled={isFormDisabled}>
+                <Select onValueChange={setTeacherBatch} required disabled={isLoading}>
                   <SelectTrigger id="teacher-batch"><SelectValue placeholder="Select batch" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cse-aiml">CSE-AIML</SelectItem>
@@ -331,8 +321,8 @@ export default function SignupPage() {
             </>
           )}
 
-          <Button type="submit" className="w-full mt-4" disabled={isFormDisabled}>
-            {formLoading ? "Saving..." : (isCompletingProfile ? "Save Profile" : "Sign Up")}
+          <Button type="submit" className="w-full mt-4" disabled={isLoading}>
+            {isLoading ? "Loading..." : (isCompletingProfile ? "Save Profile" : "Sign Up")}
           </Button>
         </form>
 

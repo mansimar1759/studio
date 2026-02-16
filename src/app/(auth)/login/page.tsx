@@ -26,8 +26,6 @@ export default function LoginPage() {
   const { user, profile, isLoading } = useUserProfile();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [emailLoading, setEmailLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     // This effect handles redirection based on auth state.
@@ -49,7 +47,6 @@ export default function LoginPage() {
 
   const onSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setEmailLoading(true);
     try {
       await handleEmailSignIn(email, password);
       // The useEffect hook will handle the redirect once the user state is updated.
@@ -71,13 +68,10 @@ export default function LoginPage() {
         title: title,
         description: description,
       });
-    } finally {
-      setEmailLoading(false);
     }
   };
 
   const onGoogleSignIn = async () => {
-    setGoogleLoading(true);
     try {
       await handleGoogleSignIn();
       // The redirection is handled by the useEffect hook, so no action is needed here on success.
@@ -94,20 +88,16 @@ export default function LoginPage() {
           description: 'Could not complete sign-in with Google. Please try again.',
         });
       }
-    } finally {
-        setGoogleLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !user) { // Show loader only on initial page load
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
-
-  const isFormDisabled = emailLoading || googleLoading;
 
   return (
     <Card className="w-full">
@@ -128,7 +118,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              disabled={isFormDisabled}
+              disabled={isLoading}
             />
           </div>
           <div className="grid gap-2">
@@ -139,12 +129,12 @@ export default function LoginPage() {
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              disabled={isFormDisabled}
+              disabled={isLoading}
             />
           </div>
           <div className="flex flex-col space-y-2 pt-4">
-            <Button type="submit" className="w-full" disabled={isFormDisabled}>
-              {emailLoading ? 'Logging in...' : 'Login'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Loading...' : 'Login'}
             </Button>
           </div>
         </form>
@@ -160,9 +150,9 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={isFormDisabled}>
-          {googleLoading ? (
-            'Signing in...'
+        <Button variant="outline" className="w-full" onClick={onGoogleSignIn} disabled={isLoading}>
+          {isLoading ? (
+            'Loading...'
           ) : (
             <>
               <GoogleIcon className="mr-2 h-4 w-4" />
