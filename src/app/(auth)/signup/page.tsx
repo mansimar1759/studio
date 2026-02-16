@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -21,17 +22,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/firebase";
-import { createUserProfile, getUserProfile } from "@/lib/user";
+import { createUserProfile } from "@/lib/user";
 import { handleEmailSignUp, handleGoogleSignIn } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { GoogleIcon } from "@/components/icons/google";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { Loader2 } from "lucide-react";
 
 type Role = "student" | "teacher";
 
 export default function SignupPage() {
-  const { user, isUserLoading } = useUser();
+  const { user, profile, isLoading } = useUserProfile();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -49,33 +51,37 @@ export default function SignupPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   
-  // This effect handles all authentication-related routing logic.
   useEffect(() => {
-    if (!isUserLoading) {
-      if (user) {
-        // User is logged in, check for a profile.
-        getUserProfile(user.uid).then(profile => {
-          if (profile && profile.role) {
-            // Profile is complete, go to the dashboard.
-            router.push('/dashboard');
-          } else {
-            // New user or incomplete profile, show the profile completion form.
-            setIsCompletingProfile(true);
-            setEmail(user.email || "");
-            const nameParts = user.displayName?.split(' ') || [];
-            setFirstName(nameParts[0] || "");
-            setLastName(nameParts.slice(1).join(' ') || "");
-          }
-        });
-      } else {
-        // User is not logged in, show the standard signup form.
-        setIsCompletingProfile(false);
-      }
+    if (isLoading) {
+      return; // Wait for user and profile to load
     }
-  }, [user, isUserLoading, router]);
+
+    if (user && profile) {
+      // User and profile exist, they are fully signed up.
+      router.push('/dashboard');
+    } else if (user && !profile) {
+      // User exists but has no profile, show the completion form.
+      setIsCompletingProfile(true);
+      setEmail(user.email || "");
+      const nameParts = user.displayName?.split(' ') || [];
+      setFirstName(nameParts[0] || "");
+      setLastName(nameParts.slice(1).join(' ') || "");
+    } else {
+      // No user, show the standard signup form.
+      setIsCompletingProfile(false);
+    }
+  }, [user, profile, isLoading, router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!role) {
+        toast({
+            variant: "destructive",
+            title: "Validation Error",
+            description: "Please select a role (Student or Teacher).",
+        });
+        return;
+    }
     setFormLoading(true);
 
     const profileData = {
@@ -90,18 +96,22 @@ export default function SignupPage() {
     };
 
     try {
+      let userId;
       if (isCompletingProfile && user) {
         // User signed in with Google and is now completing their profile.
-        await createUserProfile(user.uid, profileData);
+        userId = user.uid;
       } else {
         // A new user is signing up with email and password.
         const userCredential = await handleEmailSignUp(email, password);
-        await createUserProfile(userCredential.user.uid, {
-            ...profileData,
-            externalAuthId: userCredential.user.uid,
-            id: userCredential.user.uid,
-        });
+        userId = userCredential.user.uid;
       }
+      
+      await createUserProfile(userId, {
+        ...profileData,
+        id: userId,
+        externalAuthId: userId
+      });
+
       // The useEffect will handle redirecting to the dashboard after the user state updates.
     } catch (error) {
       console.error(error);
@@ -132,6 +142,10 @@ export default function SignupPage() {
       // The useEffect hook will handle showing the profile form or redirecting.
     } catch (error) {
       console.error(error);
+       if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
+          // Don't show a toast for this specific error, as it's a common user action.
+          return;
+      }
       toast({
         variant: 'destructive',
         title: 'Sign-In Failed',
@@ -142,11 +156,10 @@ export default function SignupPage() {
     }
   };
   
-  // Show a loading indicator while Firebase checks the initial auth state.
-  if (isUserLoading) {
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p>Loading...</p>
+      <div className="flex h-screen w-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -334,3 +347,5 @@ export default function SignupPage() {
     </Card>
   );
 }
+
+    

@@ -1,18 +1,18 @@
+
 "use client";
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
-import { getUserProfile } from '@/lib/user';
 import { Loader2 } from 'lucide-react';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 export default function DashboardRouterPage() {
-  const { user, isUserLoading } = useUser();
+  const { user, profile, isLoading } = useUserProfile();
   const router = useRouter();
 
   useEffect(() => {
-    if (isUserLoading) {
-      // Wait until user state is loaded
+    if (isLoading) {
+      // Wait until user and profile state is loaded
       return;
     }
 
@@ -23,30 +23,22 @@ export default function DashboardRouterPage() {
     }
 
     // User is logged in, check for their profile
-    getUserProfile(user.uid)
-      .then(profile => {
-        if (profile) {
-          // Profile exists, redirect based on role
-          if (profile.role === 'student') {
-            router.replace('/dashboard/student');
-          } else if (profile.role === 'teacher') {
-            router.replace('/dashboard/teacher');
-          } else {
-            // Role not defined, send to complete profile
-            router.replace('/signup');
-          }
-        } else {
-          // No profile found, user needs to complete it
-          router.replace('/signup');
-        }
-      })
-      .catch(error => {
-        console.error("Error fetching user profile:", error);
-        // On error, maybe send to login
-        router.replace('/login');
-      });
+    if (profile) {
+      // Profile exists, redirect based on role
+      if (profile.role === 'student') {
+        router.replace('/dashboard/student');
+      } else if (profile.role === 'teacher') {
+        router.replace('/dashboard/teacher');
+      } else {
+        // Role not defined, send to complete profile
+        router.replace('/signup');
+      }
+    } else {
+      // No profile found, user needs to complete it
+      router.replace('/signup');
+    }
 
-  }, [user, isUserLoading, router]);
+  }, [user, profile, isLoading, router]);
 
   return (
     <div className="flex h-[calc(100vh-200px)] w-full items-center justify-center">
