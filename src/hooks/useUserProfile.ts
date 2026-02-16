@@ -19,12 +19,13 @@ export const useUserProfile = (): UserProfileState => {
   const [isProfileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
+    // If auth state is still loading, we wait. Profile loading is already true by default.
     if (isAuthLoading) {
-        setProfileLoading(true);
-        return; 
+      return;
     }
 
     if (user) {
+      // User is authenticated, now fetch their profile.
       setProfileLoading(true);
       fetchUserProfile(user.uid)
         .then(userProfile => {
@@ -34,6 +35,7 @@ export const useUserProfile = (): UserProfileState => {
           setProfileLoading(false);
         });
     } else {
+      // No user, so we are not loading a profile.
       setProfile(null);
       setProfileLoading(false);
     }
