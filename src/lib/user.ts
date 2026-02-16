@@ -1,12 +1,19 @@
 "use client";
 
 import { initializeFirebase } from "@/firebase";
-import { doc, getDoc, setDoc, serverTimestamp, DocumentData } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, DocumentData, Firestore } from "firebase/firestore";
 
-const { firestore } = initializeFirebase();
+let firestore: Firestore;
+function getFirestoreInstance() {
+    if (!firestore) {
+        firestore = initializeFirebase().firestore;
+    }
+    return firestore;
+}
 
 export const createUserProfile = async (uid: string, data: Partial<DocumentData>) => {
-    const userDocRef = doc(firestore, "users", uid);
+    const db = getFirestoreInstance();
+    const userDocRef = doc(db, "users", uid);
     
     const profileData = {
         id: uid,
@@ -21,7 +28,7 @@ export const createUserProfile = async (uid: string, data: Partial<DocumentData>
     await setDoc(userDocRef, profileData);
 
     if (data.role === 'student') {
-        const studentProfileRef = doc(firestore, `users/${uid}/studentProfile`, uid);
+        const studentProfileRef = doc(db, `users/${uid}/studentProfile`, uid);
         await setDoc(studentProfileRef, {
             id: uid,
             userId: uid,
@@ -29,7 +36,7 @@ export const createUserProfile = async (uid: string, data: Partial<DocumentData>
             academicYear: data.academicYear,
         });
     } else if (data.role === 'teacher') {
-        const teacherProfileRef = doc(firestore, `users/${uid}/teacherProfile`, uid);
+        const teacherProfileRef = doc(db, `users/${uid}/teacherProfile`, uid);
         await setDoc(teacherProfileRef, {
             id: uid,
             userId: uid,
@@ -40,7 +47,8 @@ export const createUserProfile = async (uid: string, data: Partial<DocumentData>
 };
 
 export const getUserProfile = async (uid: string) => {
-    const userDocRef = doc(firestore, "users", uid);
+    const db = getFirestoreInstance();
+    const userDocRef = doc(db, "users", uid);
     const docSnap = await getDoc(userDocRef);
     if (docSnap.exists()) {
         return docSnap.data();

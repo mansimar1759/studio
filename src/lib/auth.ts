@@ -2,25 +2,31 @@
 
 import { initializeFirebase } from "@/firebase";
 import { 
+    Auth,
     GoogleAuthProvider, 
     signInWithPopup,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword
 } from "firebase/auth";
 
-const { auth } = initializeFirebase();
+let auth: Auth;
+function getAuthInstance() {
+    if (!auth) {
+        auth = initializeFirebase().auth;
+    }
+    return auth;
+}
+
 const googleProvider = new GoogleAuthProvider();
 
 export const handleGoogleSignIn = async () => {
-    return await signInWithPopup(auth, googleProvider);
+    return await signInWithPopup(getAuthInstance(), googleProvider);
 };
 
 export const handleEmailSignUp = async (email: string, password: string) => {
-    return await createUserWithEmailAndPassword(auth, email, password);
+    return await createUserWithEmailAndPassword(getAuthInstance(), email, password);
 }
 
 export const handleEmailSignIn = async (email: string, password: string) => {
-    return await signInWithEmailAndPassword(auth, email, password);
+    return await signInWithEmailAndPassword(getAuthInstance(), email, password);
 }
-
-    
