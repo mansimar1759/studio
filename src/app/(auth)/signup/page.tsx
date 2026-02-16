@@ -58,7 +58,7 @@ export default function SignupPage() {
 
     if (user && profile) {
       // User and profile exist, they are fully signed up.
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } else if (user && !profile) {
       // User exists but has no profile, show the completion form.
       setIsCompletingProfile(true);
@@ -155,7 +155,7 @@ export default function SignupPage() {
     });
   };
   
-  if (isLoading) {
+  if (isLoading && !isCompletingProfile) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin" />

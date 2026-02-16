@@ -37,10 +37,10 @@ export default function LoginPage() {
     if (user) {
       if (profile) {
         // User is logged in and has a profile, send to dashboard.
-        router.push('/dashboard');
+        router.replace('/dashboard');
       } else {
         // User is logged in but has no profile, send to sign-up to complete it.
-        router.push('/signup');
+        router.replace('/signup');
       }
     }
     // If no user, do nothing and show the login page.
