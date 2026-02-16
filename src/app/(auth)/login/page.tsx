@@ -63,22 +63,23 @@ export default function LoginPage() {
     }
   };
 
-  const onGoogleSignIn = async () => {
+  const onGoogleSignIn = () => {
     setGoogleLoading(true);
-    try {
-      await handleGoogleSignIn();
-      // The useEffect hook will handle the redirect once the user state is updated.
-    } catch (error) {
+    // Don't 'await'. Let the onAuthStateChanged listener handle the redirect.
+    handleGoogleSignIn().catch((error) => {
       console.error(error);
+      if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
+        // This is a common user action, so we don't need to show an error toast.
+        return;
+      }
       toast({
         variant: 'destructive',
         title: 'Sign-In Failed',
-        description:
-          'Could not complete sign-in with Google. Please try again.',
+        description: 'Could not complete sign-in with Google. Please try again.',
       });
-    } finally {
+    }).finally(() => {
         setGoogleLoading(false);
-    }
+    });
   };
 
   const isFormDisabled = emailLoading || googleLoading;

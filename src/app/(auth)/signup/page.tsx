@@ -135,15 +135,13 @@ export default function SignupPage() {
     }
   };
 
-  const onGoogleSignIn = async () => {
+  const onGoogleSignIn = () => {
     setGoogleLoading(true);
-    try {
-      await handleGoogleSignIn();
-      // The useEffect hook will handle showing the profile form or redirecting.
-    } catch (error) {
+    // Don't 'await'. Let the onAuthStateChanged listener handle the next steps.
+    handleGoogleSignIn().catch((error) => {
       console.error(error);
        if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
-          // Don't show a toast for this specific error, as it's a common user action.
+          // This is a common user action, so we don't need to show an error toast.
           return;
       }
       toast({
@@ -151,9 +149,9 @@ export default function SignupPage() {
         title: 'Sign-In Failed',
         description: 'Could not complete sign-in with Google. Please try again.',
       });
-    } finally {
+    }).finally(() => {
         setGoogleLoading(false);
-    }
+    });
   };
   
   if (isLoading) {
@@ -347,5 +345,3 @@ export default function SignupPage() {
     </Card>
   );
 }
-
-    
