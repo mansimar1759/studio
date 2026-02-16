@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
-import Link from "next/link";
+import Link from 'next/link';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { GoogleIcon } from "@/components/icons/google";
-import { handleGoogleSignIn, handleEmailSignIn } from "@/lib/auth";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { FirebaseError } from "firebase/app";
+} from '@/components/ui/card';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Button} from '@/components/ui/button';
+import {GoogleIcon} from '@/components/icons/google';
+import {handleGoogleSignIn, handleEmailSignIn} from '@/lib/auth';
+import {useRouter} from 'next/navigation';
+import {useState} from 'react';
+import {useToast} from '@/hooks/use-toast';
+import {FirebaseError} from 'firebase/app';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {toast} = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const onSignIn = async (e: React.FormEvent) => {
@@ -30,21 +30,22 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await handleEmailSignIn(email, password);
-      router.push("/dashboard");
+      router.push('/dashboard');
     } catch (error) {
       console.error(error);
-      let title = "An error occurred.";
-      let description = "Please try again.";
+      let title = 'An error occurred.';
+      let description = 'Please try again.';
 
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/invalid-credential') {
-          title = "Login Failed";
-          description = "The email or password you entered is incorrect. Please try again.";
+          title = 'Login Failed';
+          description =
+            'The email or password you entered is incorrect. Please try again.';
         }
       }
-      
+
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: title,
         description: description,
       });
@@ -56,21 +57,37 @@ export default function LoginPage() {
   const onGoogleSignIn = async () => {
     try {
       await handleGoogleSignIn();
-      router.push("/dashboard");
+      router.push('/dashboard');
     } catch (error) {
       console.error(error);
-       toast({
-        variant: "destructive",
-        title: "Google Sign-In Failed",
-        description: "Could not sign in with Google. Please try again.",
+      let title = 'Google Sign-In Failed';
+      let description = 'An unknown error occurred. Please try again.';
+
+      if (error instanceof FirebaseError) {
+        if (
+          error.code === 'auth/popup-closed-by-user' ||
+          error.code === 'auth/cancelled-popup-request'
+        ) {
+          title = 'Sign-In Canceled';
+          description =
+            'The Google Sign-In window was closed before completion.';
+        } else {
+          description = `Could not sign in with Google. Please try again. (${error.code})`;
+        }
+      }
+
+      toast({
+        variant: 'destructive',
+        title: title,
+        description: description,
       });
     }
   };
 
   return (
     <Card className="w-full">
-      <CardHeader className="text-center space-y-2">
-        <CardTitle className="text-3xl font-headline">Welcome Back!</CardTitle>
+      <CardHeader className="space-y-2 text-center">
+        <CardTitle className="font-headline text-3xl">Welcome Back!</CardTitle>
         <CardDescription>
           Enter your credentials to access your dashboard.
         </CardDescription>
@@ -79,32 +96,32 @@ export default function LoginPage() {
         <form onSubmit={onSignIn} className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
+            <Input
+              id="email"
               type="email"
-              placeholder="name@example.com" 
-              required 
+              placeholder="name@example.com"
+              required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              required 
+            <Input
+              id="password"
+              type="password"
+              required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
             />
           </div>
           <div className="flex flex-col space-y-2 pt-4">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+              {loading ? 'Logging in...' : 'Login'}
             </Button>
           </div>
         </form>
-        
+
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />

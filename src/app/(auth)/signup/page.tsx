@@ -135,10 +135,27 @@ export default function SignupPage() {
       // The useEffect will handle redirection or show the complete profile form
     } catch (error) {
       console.error(error);
+      let title = "Google Sign-In Failed";
+      let description = "An unknown error occurred. Please try again.";
+
+      if (error instanceof FirebaseError) {
+        if (
+          error.code === "auth/popup-closed-by-user" ||
+          error.code === "auth/cancelled-popup-request"
+        ) {
+          title = "Sign-In Canceled";
+          description =
+            "The Google Sign-In window was closed before completion.";
+        } else {
+          // Handle other potential Firebase errors
+          description = `Could not complete sign-in. Please try again. (${error.code})`;
+        }
+      }
+
       toast({
         variant: "destructive",
-        title: "Google Sign-In Failed",
-        description: "Could not sign in with Google. Please try again.",
+        title: title,
+        description: description,
       });
     }
   };
@@ -311,7 +328,7 @@ export default function SignupPage() {
             </>
           )}
 
-          <Button type="submit" className="w-full mt-4" disabled={loading}>
+          <Button type="submit" className="w-full mt-4" disabled={loading || isUserLoading}>
             {loading ? "Saving..." : (isCompletingProfile ? "Save Profile" : "Sign Up")}
           </Button>
         </form>
