@@ -1,3 +1,4 @@
+
 "use client";
 
 import { 
@@ -9,6 +10,9 @@ import {
 } from "firebase/auth";
 
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: "select_account"
+});
 
 export const handleGoogleSignIn = async (auth: Auth) => {
     return await signInWithPopup(auth, googleProvider);
