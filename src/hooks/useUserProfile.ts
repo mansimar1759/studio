@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { getUserProfile as fetchUserProfile } from '@/lib/user';
 import { DocumentData } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
@@ -15,6 +15,7 @@ interface UserProfileState {
 
 export const useUserProfile = (): UserProfileState => {
   const { user, isUserLoading: isAuthLoading } = useUser();
+  const firestore = useFirestore();
   const [profile, setProfile] = useState<DocumentData | null>(null);
   const [isProfileLoading, setProfileLoading] = useState(true);
 
@@ -28,7 +29,7 @@ export const useUserProfile = (): UserProfileState => {
     if (user) {
       // User is authenticated, now fetch their profile.
       setProfileLoading(true);
-      fetchUserProfile(user.uid)
+      fetchUserProfile(firestore, user.uid)
         .then(userProfile => {
           setProfile(userProfile);
         })
@@ -44,7 +45,7 @@ export const useUserProfile = (): UserProfileState => {
       setProfile(null);
       setProfileLoading(false);
     }
-  }, [user, isAuthLoading]);
+  }, [user, isAuthLoading, firestore]);
 
   return { user, profile, isLoading: isAuthLoading || isProfileLoading };
 };

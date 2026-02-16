@@ -29,6 +29,7 @@ import { FirebaseError } from "firebase/app";
 import { GoogleIcon } from "@/components/icons/google";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Loader2 } from "lucide-react";
+import { useAuth, useFirestore } from "@/firebase";
 
 type Role = "student" | "teacher";
 
@@ -36,6 +37,8 @@ export default function SignupPage() {
   const { user, profile, isLoading } = useUserProfile();
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
 
   const [role, setRole] = useState<Role>("student");
   const [email, setEmail] = useState("");
@@ -99,11 +102,11 @@ export default function SignupPage() {
         userId = user.uid;
       } else {
         // A new user is signing up with email and password.
-        const userCredential = await handleEmailSignUp(email, password);
+        const userCredential = await handleEmailSignUp(auth, email, password);
         userId = userCredential.user.uid;
       }
       
-      await createUserProfile(userId, {
+      await createUserProfile(firestore, userId, {
         ...profileData,
         id: userId,
         externalAuthId: userId
@@ -132,7 +135,7 @@ export default function SignupPage() {
 
   const onGoogleSignIn = async () => {
     try {
-        await handleGoogleSignIn();
+        await handleGoogleSignIn(auth);
         // The useEffect hook will handle redirecting or showing the profile completion form.
     } catch (error) {
         if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
